@@ -1,22 +1,22 @@
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Policy {
-    letter: u8,
+    letter: char,
     left: usize,
     right: usize,
 }
 
 impl Policy {
     fn validate_part1(self, input: &str) -> bool {
-        let count = input.bytes().filter(|&c| c == self.letter).count();
+        let count = input.chars().filter(|&c| c == self.letter).count();
         self.left <= count && count <= self.right
     }
 
     fn validate_part2(self, input: &str) -> bool {
         input
-            .bytes()
+            .chars()
             .enumerate()
-            .filter(|(i, _)| *i == self.left - 1 || *i == self.right - 1)
-            .filter(|(_, x)| *x == self.letter)
+            .filter(|&(i, _)| i == self.left - 1 || i == self.right - 1)
+            .filter(|&(_, x)| x == self.letter)
             .count()
             == 1
     }
@@ -24,7 +24,7 @@ impl Policy {
 
 #[aoc_generator(day2)]
 pub fn day2_generator(input: &str) -> Vec<(Policy, String)> {
-    input.lines().map(|l| parse_line(l)).collect()
+    input.lines().map(parse_line).collect()
 }
 
 fn parse_line(line: &str) -> (Policy, String) {
@@ -35,7 +35,7 @@ fn parse_line(line: &str) -> (Policy, String) {
 
     (
         Policy {
-            letter: input[2].bytes().next().unwrap(),
+            letter: input[2].chars().next().unwrap(),
             left: input[0].parse().unwrap(),
             right: input[1].parse().unwrap(),
         },
@@ -66,7 +66,7 @@ mod tests {
             vec![
                 (
                     Policy {
-                        letter: b'a',
+                        letter: 'a',
                         left: 1,
                         right: 3
                     },
@@ -74,7 +74,7 @@ mod tests {
                 ),
                 (
                     Policy {
-                        letter: b'b',
+                        letter: 'b',
                         left: 1,
                         right: 3
                     },
@@ -82,7 +82,7 @@ mod tests {
                 ),
                 (
                     Policy {
-                        letter: b'c',
+                        letter: 'c',
                         left: 2,
                         right: 9
                     },
