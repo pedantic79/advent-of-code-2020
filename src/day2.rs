@@ -23,21 +23,21 @@ impl Policy {
 }
 
 #[aoc_generator(day2)]
-pub fn day2_generator(input: &str) -> Vec<(Policy, String)> {
+pub fn day2_generator(input: &str) -> Option<Vec<(Policy, String)>> {
     input.lines().map(parse_line).collect()
 }
 
-fn parse_line(line: &str) -> (Policy, String) {
-    let mut input = line.split(|c| ":- ".contains(c)).filter(|s| !s.is_empty());
+fn parse_line(line: &str) -> Option<(Policy, String)> {
+    let mut iter = line.split(|c| ":- ".contains(c)).filter(|s| !s.is_empty());
 
-    (
+    Some((
         Policy {
-            left: input.next().unwrap().parse().unwrap(),
-            right: input.next().unwrap().parse().unwrap(),
-            letter: input.next().unwrap().chars().next().unwrap(),
+            left: iter.next()?.parse().ok()?,
+            right: iter.next()?.parse().ok()?,
+            letter: iter.next()?.chars().next()?,
         },
-        input.next().unwrap().to_owned(),
-    )
+        iter.next()?.to_owned(),
+    ))
 }
 
 #[aoc(day2, part1)]
@@ -56,10 +56,14 @@ mod tests {
 
     const SAMPLE: &str = "1-3 a: abcde\n1-3 b: cdefg\n2-9 c: ccccccccc";
 
+    fn sample_input() -> Vec<(Policy, String)> {
+        day2_generator(SAMPLE).unwrap()
+    }
+
     #[test]
     pub fn input_test() {
         assert_eq!(
-            day2_generator(SAMPLE),
+            sample_input(),
             vec![
                 (
                     Policy {
@@ -91,11 +95,11 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&day2_generator(SAMPLE)), 2)
+        assert_eq!(part1(&sample_input()), 2)
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&day2_generator(SAMPLE)), 1)
+        assert_eq!(part2(&sample_input()), 1)
     }
 }
