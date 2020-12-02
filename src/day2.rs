@@ -26,7 +26,9 @@ pub fn day2_generator(input: &str) -> Option<Vec<(Policy, String)>> {
 }
 
 fn parse_line(line: &str) -> Option<(Policy, String)> {
-    let mut iter = line.split(|c| ":- ".contains(c)).filter(|s| !s.is_empty());
+    let mut iter = line
+        .split([':', '-', ' '].as_ref())
+        .filter(|s| !s.is_empty());
 
     Some((
         Policy {
