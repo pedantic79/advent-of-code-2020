@@ -28,18 +28,15 @@ pub fn day2_generator(input: &str) -> Vec<(Policy, String)> {
 }
 
 fn parse_line(line: &str) -> (Policy, String) {
-    let input = line
-        .split(|c| ":- ".contains(c))
-        .filter(|s| !s.is_empty())
-        .collect::<Vec<_>>();
+    let mut input = line.split(|c| ":- ".contains(c)).filter(|s| !s.is_empty());
 
     (
         Policy {
-            letter: input[2].chars().next().unwrap(),
-            left: input[0].parse().unwrap(),
-            right: input[1].parse().unwrap(),
+            left: input.next().unwrap().parse().unwrap(),
+            right: input.next().unwrap().parse().unwrap(),
+            letter: input.next().unwrap().chars().next().unwrap(),
         },
-        input[3].to_owned(),
+        input.next().unwrap().to_owned(),
     )
 }
 
