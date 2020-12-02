@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(PartialEq, Debug)]
 pub struct Policy {
     letter: char,
     left: usize,
@@ -6,17 +6,15 @@ pub struct Policy {
 }
 
 impl Policy {
-    fn validate_part1(self, input: &str) -> bool {
+    fn validate_part1(&self, input: &str) -> bool {
         let count = input.chars().filter(|&c| c == self.letter).count();
         self.left <= count && count <= self.right
     }
 
-    fn validate_part2(self, input: &str) -> bool {
-        input
-            .chars()
-            .enumerate()
-            .filter(|&(i, _)| i == self.left - 1 || i == self.right - 1)
-            .filter(|&(_, x)| x == self.letter)
+    fn validate_part2(&self, input: &str) -> bool {
+        [self.left, self.right]
+            .iter()
+            .filter(|&&i| input.chars().nth(i - 1) == Some(self.letter))
             .count()
             == 1
     }
