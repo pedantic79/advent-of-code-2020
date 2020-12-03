@@ -12,11 +12,8 @@ impl Policy {
     }
 
     fn validate_part2(&self, input: &str) -> bool {
-        [self.left, self.right]
-            .iter()
-            .filter(|&&i| input.chars().nth(i - 1) == Some(self.letter))
-            .count()
-            == 1
+        (input.chars().nth(self.left - 1) == Some(self.letter))
+            ^ (input.chars().nth(self.right - 1) == Some(self.letter))
     }
 }
 
