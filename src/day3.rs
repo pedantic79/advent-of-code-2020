@@ -1,11 +1,13 @@
 pub struct Forest {
-    field: Vec<Vec<bool>>,
+    field: Vec<Vec<u8>>,
     width: usize,
     height: usize,
 }
 
 impl Forest {
-    fn new(field: Vec<Vec<bool>>) -> Self {
+    const TREE: u8 = b'#';
+
+    fn new(field: Vec<Vec<u8>>) -> Self {
         let width = field[0].len();
         let height = field.len();
 
@@ -17,7 +19,7 @@ impl Forest {
     }
 
     fn get(&self, c: usize, r: usize) -> bool {
-        self.field[r][c]
+        self.field[r][c] == Self::TREE
     }
 
     fn count_trees(&self, c_inc: usize, r_inc: usize) -> usize {
@@ -27,6 +29,7 @@ impl Forest {
             .step_by(r_inc)
             .filter(|&r| {
                 let c_orig = c;
+
                 c += c_inc;
                 if c >= self.width {
                     c -= self.width;
@@ -40,12 +43,7 @@ impl Forest {
 
 #[aoc_generator(day3)]
 pub fn day3_generator(input: &str) -> Forest {
-    Forest::new(
-        input
-            .lines()
-            .map(|l| l.chars().map(|c| c == '#').collect())
-            .collect(),
-    )
+    Forest::new(input.lines().map(|l| l.as_bytes().to_owned()).collect())
 }
 
 #[aoc(day3, part1)]
