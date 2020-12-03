@@ -5,7 +5,7 @@ pub struct Map {
 
 impl Map {
     fn get(&self, r: usize, c: usize) -> bool {
-        let c = c % self.width;
+        // let c = c % self.width;
 
         self.field[r][c]
     }
@@ -32,6 +32,9 @@ pub fn count_trees(inputs: &Map, c_inc: usize, r_inc: usize) -> usize {
         .filter(|&r| {
             let c_orig = c;
             c += c_inc;
+            if c >= inputs.width {
+                c -= inputs.width;
+            }
             inputs.get(r, c_orig)
         })
         .count()
