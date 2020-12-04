@@ -42,7 +42,7 @@ impl Forest {
 }
 
 #[aoc_generator(day3)]
-pub fn day3_generator(input: &str) -> Forest {
+pub fn generator(input: &str) -> Forest {
     Forest::new(input.lines().map(|l| l.as_bytes().to_owned()).collect())
 }
 
@@ -77,11 +77,11 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&day3_generator(SAMPLE)), 7);
+        assert_eq!(part1(&generator(SAMPLE)), 7);
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&day3_generator(SAMPLE)), 336);
+        assert_eq!(part2(&generator(SAMPLE)), 336);
     }
 }
