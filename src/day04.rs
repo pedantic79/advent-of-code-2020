@@ -39,9 +39,10 @@ impl Passport {
     fn is_valid_haircolor(&self) -> bool {
         let color = self.0["hcl"].as_str();
 
-        color.len() == 7
-            && color.as_bytes()[0] == b'#'
-            && color[1..].bytes().all(|x| x.is_ascii_hexdigit())
+        color.len() == 7 && {
+            let mut iter = color.bytes();
+            iter.next() == Some(b'#') && iter.all(|x| x.is_ascii_hexdigit())
+        }
     }
 
     fn is_valid_eyecolor(&self) -> bool {
@@ -58,21 +59,20 @@ impl Passport {
 }
 
 #[aoc_generator(day4)]
-pub fn generator(input: &str) -> Vec<Passport> {
+pub fn generator(input: &str) -> Option<Vec<Passport>> {
     input
         .split("\n\n")
         .map(|line| {
-            Passport(
-                line.split(&[' ', '\n'][..])
-                    .map(|field| {
-                        let mut iter = field.split(':');
-                        (
-                            iter.next().unwrap().to_owned(),
-                            iter.next().unwrap().to_owned(),
-                        )
-                    })
-                    .collect(),
-            )
+            line.split(&[' ', '\n'][..])
+                .map(|field| {
+                    let mut iter = field.split(':');
+
+                    iter.next()
+                        .map(|s| s.to_owned())
+                        .and_then(|first| iter.next().map(|s| (first, s.to_owned())))
+                })
+                .collect::<Option<_>>()
+                .map(Passport)
         })
         .collect()
 }
@@ -139,13 +139,13 @@ pid:3556412378 byr:2007";
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE)), 2);
+        assert_eq!(part1(&generator(SAMPLE).unwrap()), 2);
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&generator(VALID)), 4);
+        assert_eq!(part2(&generator(VALID).unwrap()), 4);
 
-        assert_eq!(part2(&generator(INVALID)), 0);
+        assert_eq!(part2(&generator(INVALID).unwrap()), 0);
     }
 }
