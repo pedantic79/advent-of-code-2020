@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 #[derive(Debug)]
-pub struct Passport(HashMap<String, String>);
+pub struct Passport(BTreeMap<String, String>);
 
 impl Passport {
     fn is_valid(&self) -> bool {
@@ -62,8 +62,9 @@ impl Passport {
 pub fn generator(input: &str) -> Option<Vec<Passport>> {
     input
         .split("\n\n")
-        .map(|line| {
-            line.split(&[' ', '\n'][..])
+        .map(|section| {
+            section
+                .split(&[' ', '\n'][..])
                 .map(|field| {
                     let mut iter = field.split(':');
 
