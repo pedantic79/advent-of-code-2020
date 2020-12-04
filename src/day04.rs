@@ -34,8 +34,9 @@ impl Passport {
     }
 
     fn is_valid_range(s: &str, lower: usize, upper: usize) -> bool {
-        let value = s.parse().unwrap_or(usize::MAX);
-        lower <= value && value <= upper
+        s.parse()
+            .map(|value| lower <= value && value <= upper)
+            .unwrap_or(false)
     }
 
     fn is_valid_height(height: &str) -> bool {
