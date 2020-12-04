@@ -1,60 +1,58 @@
 use std::collections::BTreeMap;
+
 #[derive(Debug)]
 pub struct Passport(BTreeMap<String, String>);
 
 impl Passport {
     fn is_valid(&self) -> bool {
-        ["byr", "ecl", "eyr", "hcl", "hgt", "iyr", "pid"]
-            .iter()
-            .all(|&key| self.0.contains_key(key))
+        self.0
+            .keys()
+            .filter(|&key| key != "cid")
+            .eq(["byr", "ecl", "eyr", "hcl", "hgt", "iyr", "pid"].iter())
     }
 
     fn is_valid_values(&self) -> bool {
         self.is_valid()
-            && self.is_valid_range("byr", 1920, 2002)
-            && self.is_valid_range("iyr", 2010, 2020)
-            && self.is_valid_range("eyr", 2020, 2030)
-            && self.is_valid_height()
-            && self.is_valid_haircolor()
-            && self.is_valid_eyecolor()
-            && self.is_valid_pid()
+            && self
+                .0
+                .iter()
+                .all(|(key, value)| self.validate_value(key, value))
     }
 
-    fn is_valid_range(&self, key: &str, lower: usize, upper: usize) -> bool {
-        let value = self.0[key].parse().unwrap_or(0);
-        lower <= value && value <= upper
-    }
-
-    fn is_valid_height(&self) -> bool {
-        let height = self.0["hgt"].as_str();
-        let value = height[..height.len() - 2].parse().unwrap_or(0);
-
-        if height.ends_with("cm") {
-            150 <= value && value <= 193
-        } else {
-            59 <= value && value <= 76
+    fn validate_value(&self, key: &str, value: &str) -> bool {
+        match key {
+            "byr" => Self::is_valid_range(value, 1920, 2002),
+            "iyr" => Self::is_valid_range(value, 2010, 2020),
+            "eyr" => Self::is_valid_range(value, 2020, 2030),
+            "hgt" => Self::is_valid_height(value),
+            "hcl" => Self::is_valid_haircolor(value),
+            "ecl" => ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(&value),
+            "pid" => value.len() == 9 && value.bytes().all(|x| x.is_ascii_digit()),
+            "cid" => true,
+            _ => false,
         }
     }
 
-    fn is_valid_haircolor(&self) -> bool {
-        let color = self.0["hcl"].as_str();
+    fn is_valid_range(s: &str, lower: usize, upper: usize) -> bool {
+        let value = s.parse().unwrap_or(usize::MAX);
+        lower <= value && value <= upper
+    }
 
+    fn is_valid_height(height: &str) -> bool {
+        if let Some(centimeter) = height.strip_suffix("cm") {
+            Self::is_valid_range(centimeter, 150, 193)
+        } else if let Some(inches) = height.strip_suffix("in") {
+            Self::is_valid_range(inches, 59, 76)
+        } else {
+            false
+        }
+    }
+
+    fn is_valid_haircolor(color: &str) -> bool {
         color.len() == 7 && {
             let mut iter = color.bytes();
             iter.next() == Some(b'#') && iter.all(|x| x.is_ascii_hexdigit())
         }
-    }
-
-    fn is_valid_eyecolor(&self) -> bool {
-        let color = self.0["ecl"].as_str();
-
-        ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"].contains(&color)
-    }
-
-    fn is_valid_pid(&self) -> bool {
-        let pid = self.0["pid"].as_str();
-
-        pid.len() == 9 && pid.bytes().all(|x| x.is_ascii_digit())
     }
 }
 
@@ -144,9 +142,12 @@ pid:3556412378 byr:2007";
     }
 
     #[test]
-    pub fn test2() {
+    pub fn test2_valid() {
         assert_eq!(part2(&generator(VALID).unwrap()), 4);
+    }
 
+    #[test]
+    pub fn test2_invalid() {
         assert_eq!(part2(&generator(INVALID).unwrap()), 0);
     }
 }
