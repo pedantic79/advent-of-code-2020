@@ -18,7 +18,7 @@ impl Policy {
 }
 
 #[aoc_generator(day2)]
-pub fn day2_generator(input: &str) -> Option<Vec<(Policy, String)>> {
+pub fn generator(input: &str) -> Option<Vec<(Policy, String)>> {
     input.lines().map(parse_line).collect()
 }
 
@@ -54,7 +54,7 @@ mod tests {
     const SAMPLE: &str = "1-3 a: abcde\n1-3 b: cdefg\n2-9 c: ccccccccc";
 
     fn sample_input() -> Vec<(Policy, String)> {
-        day2_generator(SAMPLE).unwrap()
+        generator(SAMPLE).unwrap()
     }
 
     #[test]

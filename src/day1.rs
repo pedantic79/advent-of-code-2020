@@ -6,7 +6,7 @@ use std::{
 const TARGET: i32 = 2020;
 
 #[aoc_generator(day1)]
-pub fn day1_generator(input: &str) -> Vec<i32> {
+pub fn generator(input: &str) -> Vec<i32> {
     input.lines().map(|l| l.parse().unwrap()).collect()
 }
 
