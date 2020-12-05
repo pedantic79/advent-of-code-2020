@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 #[derive(Debug, PartialEq)]
 pub struct Seat(String, String);
 
@@ -44,23 +42,34 @@ pub fn part1(inputs: &[Seat]) -> usize {
     inputs.iter().map(|seat| seat.get_id()).max().unwrap()
 }
 
-#[aoc(day5 part2)]
-pub fn part2(inputs: &[Seat]) -> usize {
-    let set = inputs
-        .iter()
-        .map(|seat| seat.get_id())
-        .collect::<BTreeSet<_>>();
+#[aoc(day5 part2, vec)]
+pub fn part2_vec(inputs: &[Seat]) -> usize {
+    let mut set = inputs.iter().map(|seat| seat.get_id()).collect::<Vec<_>>();
+    set.sort_unstable();
 
-    let mut next_seat = None;
-    for id in set {
-        match next_seat {
-            None => next_seat = Some(id + 1),
-            Some(num) if id == num => next_seat = Some(id + 1),
-            Some(num) => return num,
+    for seats in set.windows(2) {
+        assert!(seats.len() == 2);
+        if seats[0] + 1 != seats[1] {
+            return seats[0] + 1;
         }
     }
 
     unreachable!()
+}
+
+#[aoc(day5 part2, array)]
+pub fn part2(inputs: &[Seat]) -> usize {
+    let mut seats = [false; 1024];
+
+    for id in inputs.iter().map(|seat| seat.get_id()) {
+        seats[id] = true
+    }
+
+    let mut iter = seats.iter().enumerate();
+
+    while let Some((_, false)) = iter.next() {}
+    while let Some((_, true)) = iter.next() {}
+    iter.next().unwrap().0 - 1
 }
 
 #[cfg(test)]
