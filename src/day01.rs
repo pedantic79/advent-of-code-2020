@@ -88,15 +88,20 @@ pub fn part1_hashset(inputs: &[i32]) -> i32 {
 mod tests {
     use super::*;
 
-    const SAMPLE: [i32; 6] = [1721, 979, 366, 299, 675, 1456];
+    const SAMPLE: &str = "1721\n979\n366\n299\n675\n1456";
+
+    #[test]
+    pub fn test_input() {
+        assert_eq!(generator(SAMPLE), vec![1721, 979, 366, 299, 675, 1456]);
+    }
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&SAMPLE), 1721 * 299)
+        assert_eq!(part1(&generator(SAMPLE)), 1721 * 299)
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&SAMPLE), 979 * 366 * 675)
+        assert_eq!(part2(&generator(SAMPLE)), 979 * 366 * 675)
     }
 }

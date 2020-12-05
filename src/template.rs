@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq)]
 pub struct Object {}
 
 #[aoc_generator(dayN)]
@@ -20,6 +21,11 @@ mod tests {
     use super::*;
 
     const SAMPLE: &str = r"..##.......";
+
+    #[test]
+    pub fn test_input() {
+        assert_eq!(generator(SAMPLE), Object {});
+    }
 
     #[test]
     pub fn test1() {
