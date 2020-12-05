@@ -1,50 +1,30 @@
-#[derive(Debug, PartialEq)]
-pub struct Seat(String, String);
-
-impl Seat {
-    fn get_row_col(&self) -> (usize, usize) {
-        fn bool2num(b: bool) -> usize {
-            b as usize // not a fan of this but it is valid, false => 0, true => 1
-        }
-
-        let row = self
-            .0
-            .bytes()
-            .fold(0, |total, c| total * 2 + bool2num(c == b'B'));
-
-        let col = self
-            .1
-            .bytes()
-            .fold(0, |total, c| total * 2 + bool2num(c == b'R'));
-
-        (row, col)
-    }
-
-    fn get_id(&self) -> usize {
-        let (row, col) = self.get_row_col();
-        row * 8 + col
+fn bool2num(b: bool) -> usize {
+    if b {
+        1
+    } else {
+        0
     }
 }
 
 #[aoc_generator(day5)]
-pub fn generator(input: &str) -> Vec<Seat> {
+pub fn generator(input: &str) -> Vec<usize> {
     input
         .lines()
         .map(|line| {
-            let (r, c) = line.split_at(7);
-            Seat(r.into(), c.into())
+            line.bytes()
+                .fold(0, |total, c| total * 2 + bool2num(c == b'B' || c == b'R'))
         })
         .collect()
 }
 
 #[aoc(day5, part1)]
-pub fn part1(inputs: &[Seat]) -> usize {
-    inputs.iter().map(|seat| seat.get_id()).max().unwrap()
+pub fn part1(inputs: &[usize]) -> usize {
+    inputs.iter().copied().max().unwrap()
 }
 
 #[aoc(day5 part2, vec)]
-pub fn part2_vec(inputs: &[Seat]) -> usize {
-    let mut set = inputs.iter().map(|seat| seat.get_id()).collect::<Vec<_>>();
+pub fn part2_vec(inputs: &[usize]) -> usize {
+    let mut set = inputs.iter().copied().collect::<Vec<_>>();
     set.sort_unstable();
 
     for seats in set.windows(2) {
@@ -58,10 +38,10 @@ pub fn part2_vec(inputs: &[Seat]) -> usize {
 }
 
 #[aoc(day5 part2, array)]
-pub fn part2(inputs: &[Seat]) -> usize {
+pub fn part2(inputs: &[usize]) -> usize {
     let mut seats = [false; 1024];
 
-    for id in inputs.iter().map(|seat| seat.get_id()) {
+    for id in inputs.iter().copied() {
         seats[id] = true
     }
 
@@ -83,13 +63,7 @@ BBFFBBFRLL";
 
     #[test]
     pub fn test_input() {
-        assert_eq!(
-            generator(SAMPLE)
-                .into_iter()
-                .map(|seat| seat.get_row_col())
-                .collect::<Vec<_>>(),
-            vec![(44, 5), (70, 7), (14, 7), (102, 4)]
-        );
+        assert_eq!(generator(SAMPLE), vec![357, 567, 119, 820]);
     }
 
     #[test]
