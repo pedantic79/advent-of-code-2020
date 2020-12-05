@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Passport(BTreeMap<String, String>);
 
 impl Passport {
@@ -134,7 +134,55 @@ pid:3556412378 byr:2007";
 
     #[test]
     pub fn test_input() {
-        generator(SAMPLE);
+        assert_eq!(
+            generator(SAMPLE)
+                .unwrap()
+                .iter()
+                .map(|passport| passport
+                    .0
+                    .iter()
+                    .map(|(s, t)| (s.as_str(), t.as_str()))
+                    .collect::<Vec<_>>())
+                .collect::<Vec<_>>(),
+            vec![
+                vec![
+                    ("byr", "1937"),
+                    ("cid", "147"),
+                    ("ecl", "gry"),
+                    ("eyr", "2020"),
+                    ("hcl", "#fffffd"),
+                    ("hgt", "183cm"),
+                    ("iyr", "2017"),
+                    ("pid", "860033327")
+                ],
+                vec![
+                    ("byr", "1929"),
+                    ("cid", "350"),
+                    ("ecl", "amb"),
+                    ("eyr", "2023"),
+                    ("hcl", "#cfa07d"),
+                    ("iyr", "2013"),
+                    ("pid", "028048884")
+                ],
+                vec![
+                    ("byr", "1931"),
+                    ("ecl", "brn"),
+                    ("eyr", "2024"),
+                    ("hcl", "#ae17e1"),
+                    ("hgt", "179cm"),
+                    ("iyr", "2013"),
+                    ("pid", "760753108")
+                ],
+                vec![
+                    ("ecl", "brn"),
+                    ("eyr", "2025"),
+                    ("hcl", "#cfa07d"),
+                    ("hgt", "59in"),
+                    ("iyr", "2011"),
+                    ("pid", "166559648")
+                ]
+            ]
+        );
     }
 
     #[test]

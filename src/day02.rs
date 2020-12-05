@@ -58,7 +58,7 @@ mod tests {
     }
 
     #[test]
-    pub fn input_test() {
+    pub fn test_input() {
         assert_eq!(
             sample_input(),
             vec![

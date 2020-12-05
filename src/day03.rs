@@ -76,6 +76,21 @@ mod tests {
 .#..#...#.#";
 
     #[test]
+    pub fn test_input() {
+        assert_eq!(
+            generator(SAMPLE)
+                .field
+                .iter()
+                .map(|row| row
+                    .iter()
+                    .map(|&x| (x == Forest::TREE) as usize)
+                    .fold(0, |acc, digit| acc * 2 + digit))
+                .collect::<Vec<_>>(),
+            vec![384, 1092, 530, 325, 562, 352, 673, 513, 1416, 1121, 581]
+        )
+    }
+
+    #[test]
     pub fn test1() {
         assert_eq!(part1(&generator(SAMPLE)), 7);
     }
