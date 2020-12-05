@@ -199,4 +199,18 @@ pid:3556412378 byr:2007";
     pub fn test2_invalid() {
         assert_eq!(part2(&generator(INVALID).unwrap()), 0);
     }
+
+    mod regression {
+        use super::*;
+
+        const INPUT: &str = include_str!("../input/2020/day4.txt");
+        const ANSWERS: (usize, usize) = (192, 101);
+
+        #[test]
+        pub fn test() {
+            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
+            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
+        }
+    }
 }
