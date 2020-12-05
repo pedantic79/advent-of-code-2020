@@ -24,7 +24,7 @@ pub fn part1(inputs: &[usize]) -> usize {
 
 #[aoc(day5 part2, vec)]
 pub fn part2_vec(inputs: &[usize]) -> usize {
-    let mut set = inputs.iter().copied().collect::<Vec<_>>();
+    let mut set = inputs.to_vec();
     set.sort_unstable();
 
     for seats in set.windows(2) {
