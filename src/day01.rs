@@ -104,4 +104,18 @@ mod tests {
     pub fn test2() {
         assert_eq!(part2(&generator(SAMPLE)), 979 * 366 * 675)
     }
+
+    mod regression {
+        use super::*;
+
+        const INPUT: &str = include_str!("../input/2020/day1.txt");
+        const ANSWERS: (i32, i32) = (1018944, 8446464);
+
+        #[test]
+        pub fn test() {
+            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            assert_eq!(part1(&generator(input)), ANSWERS.0);
+            assert_eq!(part2(&generator(input)), ANSWERS.1);
+        }
+    }
 }

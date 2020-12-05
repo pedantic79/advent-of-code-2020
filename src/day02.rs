@@ -99,4 +99,18 @@ mod tests {
     pub fn test2() {
         assert_eq!(part2(&sample_input()), 1)
     }
+
+    mod regression {
+        use super::*;
+
+        const INPUT: &str = include_str!("../input/2020/day2.txt");
+        const ANSWERS: (usize, usize) = (458, 342);
+
+        #[test]
+        pub fn test() {
+            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
+            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
+        }
+    }
 }
