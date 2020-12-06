@@ -1,48 +1,88 @@
-use std::collections::HashSet;
+#[derive(Debug, PartialEq)]
+pub struct Group {
+    people: Vec<String>,
+}
+
+impl Group {
+    pub fn new(people: Vec<String>) -> Self {
+        Self { people }
+    }
+
+    pub fn count_vote<F: Fn(usize) -> bool>(&self, predicate: F) -> usize {
+        let mut tally = [0; 26];
+
+        for person in self.people.iter() {
+            for vote in person.bytes() {
+                let idx = vote - b'a';
+                tally[idx as usize] += 1;
+            }
+        }
+
+        tally.iter().filter(|&&n| predicate(n)).count()
+    }
+
+    pub fn unique_votes_hs(&self) -> usize {
+        use std::collections::HashSet;
+
+        self.people
+            .iter()
+            .flat_map(|ballot| ballot.bytes())
+            .collect::<HashSet<_>>()
+            .len()
+    }
+
+    pub fn intersected_votes_hm(&self) -> usize {
+        use std::collections::HashMap;
+
+        let tally = self.people.iter().flat_map(|ballot| ballot.bytes()).fold(
+            HashMap::new(),
+            |mut hm, vote| {
+                *hm.entry(vote).or_insert(0) += 1;
+                hm
+            },
+        );
+
+        tally
+            .values()
+            .filter(|&&ans| ans == self.people.len())
+            .count()
+    }
+}
 
 #[aoc_generator(day6)]
-pub fn generator(input: &str) -> Vec<Vec<String>> {
+pub fn generator(input: &str) -> Vec<Group> {
     input
         .split("\n\n")
-        .map(|group| {
-            group
-                .lines()
-                .map(|person| person.to_string())
-                .collect::<Vec<_>>()
-        })
+        .map(|group| Group::new(group.lines().map(|person| person.to_string()).collect()))
         .collect()
 }
 
 #[aoc(day6, part1)]
-pub fn part1(inputs: &[Vec<String>]) -> usize {
+pub fn part1(inputs: &[Group]) -> usize {
     inputs
         .iter()
-        .map(|group| {
-            group
-                .iter()
-                .flat_map(|s| s.chars())
-                .collect::<HashSet<_>>()
-                .len()
-        })
+        .map(|group| group.count_vote(|ans| ans > 0))
         .sum()
 }
 
 #[aoc(day6, part2)]
-pub fn part2(inputs: &[Vec<String>]) -> usize {
+pub fn part2(inputs: &[Group]) -> usize {
     inputs
         .iter()
-        .map(|group| {
-            let mut tally = [0; 26];
+        .map(|group| group.count_vote(|ans| ans == group.people.len()))
+        .sum()
+}
 
-            for person in group {
-                for ans in person.chars() {
-                    let idx = ((ans as u8) - b'a') as usize;
-                    tally[idx] += 1;
-                }
-            }
+#[aoc(day6, part1, hs)]
+pub fn part1_hs(inputs: &[Group]) -> usize {
+    inputs.iter().map(|group| group.unique_votes_hs()).sum()
+}
 
-            tally.iter().filter(|&&ans| ans == group.len()).count()
-        })
+#[aoc(day6, part2, hm)]
+pub fn part2_hm(inputs: &[Group]) -> usize {
+    inputs
+        .iter()
+        .map(|group| group.intersected_votes_hm())
         .sum()
 }
 
@@ -68,10 +108,10 @@ b";
 
     #[test]
     pub fn test_input() {
-        fn to_owned(input: &[&[&str]]) -> Vec<Vec<String>> {
+        fn to_owned(input: &[&[&str]]) -> Vec<Group> {
             input
                 .iter()
-                .map(|row| row.iter().map(|s| s.to_string()).collect())
+                .map(|row| Group::new(row.iter().map(|s| s.to_string()).collect()))
                 .collect()
         }
 
