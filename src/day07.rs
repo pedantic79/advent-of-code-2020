@@ -156,8 +156,33 @@ dark violet bags contain no other bags.";
 
     #[test]
     pub fn test_input() {
-        // assert_eq!(generator(SAMPLE), ColoredBags());
-        generator(SAMPLE1);
+        let rules = [
+            ("light red", &[("bright white", 1), ("muted yellow", 2)][..]),
+            (
+                "dark orange",
+                &[("bright white", 3), ("muted yellow", 4)][..],
+            ),
+            ("bright white", &[("shiny gold", 1)][..]),
+            ("muted yellow", &[("shiny gold", 2), ("faded blue", 9)][..]),
+            ("shiny gold", &[("dark olive", 1), ("vibrant plum", 2)][..]),
+            ("dark olive", &[("faded blue", 3), ("dotted black", 4)][..]),
+            (
+                "vibrant plum",
+                &[("faded blue", 5), ("dotted black", 6)][..],
+            ),
+            ("faded blue", &[][..]),
+            ("dotted black", &[][..]),
+        ]
+        .iter()
+        .map(|&(key, v)| {
+            (
+                key.to_string(),
+                v.iter().map(|&(k, n)| (k.to_string(), n)).collect(),
+            )
+        })
+        .collect::<HashMap<_, _>>();
+
+        assert_eq!(generator(SAMPLE1).unwrap(), BagRules { rules });
     }
 
     #[test]
