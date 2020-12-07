@@ -23,31 +23,95 @@ impl BagRules {
 
 type BagColor = String;
 
+mod parser {
+    use nom::{
+        branch::alt,
+        bytes::complete::{tag, take_while1},
+        combinator::{complete, map, map_res},
+        multi::separated_list1,
+        sequence::{pair, terminated, tuple},
+        IResult,
+    };
+
+    fn word(s: &str) -> IResult<&str, &str> {
+        take_while1(|c: char| c.is_alphabetic())(s)
+    }
+
+    fn numeric(s: &str) -> IResult<&str, usize> {
+        map_res(take_while1(|c: char| c.is_numeric()), |x: &str| {
+            x.parse::<usize>()
+        })(s)
+    }
+
+    fn adjective_color(s: &str) -> IResult<&str, (&str, &str)> {
+        tuple((terminated(word, tag(" ")), word))(s)
+    }
+
+    fn bag(s: &str) -> IResult<&str, &str> {
+        alt((tag("bags"), tag("bag")))(s)
+    }
+
+    fn color_bag(s: &str) -> IResult<&str, (&str, &str)> {
+        terminated(terminated(adjective_color, tag(" ")), bag)(s)
+    }
+
+    fn count_color_bag(s: &str) -> IResult<&str, (usize, &str, &str)> {
+        map(
+            pair(terminated(numeric, tag(" ")), color_bag),
+            |(num, (adj, color))| (num, adj, color),
+        )(s)
+    }
+
+    fn multiple_color_bag(s: &str) -> IResult<&str, Vec<(usize, &str, &str)>> {
+        alt((
+            map(tag("no other bags"), |_| vec![]),
+            separated_list1(tag(", "), count_color_bag),
+        ))(s)
+    }
+
+    #[allow(clippy::type_complexity)]
+    pub fn rule(line: &str) -> IResult<&str, ((&str, &str), Vec<(usize, &str, &str)>)> {
+        complete(terminated(
+            pair(terminated(color_bag, tag(" contain ")), multiple_color_bag),
+            tag("."),
+        ))(line)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn sample() {
+            assert_eq!(rule("vibrant maroon bags contain 3 dark fuchsia bags, 3 plaid turquoise bags, 1 pale silver bag, 4 shiny cyan bags.").unwrap().1,
+            (("vibrant", "maroon"), vec![(3, "dark", "fuchsia"), (3, "plaid", "turquoise"), (1, "pale", "silver"), (4, "shiny", "cyan")]))
+        }
+
+        #[test]
+        fn multi() {
+            assert_eq!(
+                count_color_bag("3 dark fuschia bags").unwrap().1,
+                (3, "dark", "fuschia")
+            )
+        }
+
+        #[test]
+        fn number() {
+            assert_eq!(numeric("3 dark fuschia bags").unwrap().1, 3)
+        }
+    }
+}
+
 #[aoc_generator(day7)]
 pub fn generator(input: &str) -> Option<BagRules> {
     let mut rules = HashMap::new();
 
     for line in input.lines() {
-        let mut parse_iter = line.split(" bags contain ");
+        let ((adj, color), bag_rules) = parser::rule(line).ok()?.1;
 
-        let key = parse_iter.next()?;
-        for rule in parse_iter
-            .next()?
-            .split(&[',', '.'][..])
-            .filter(|x| !x.is_empty())
-            .map(|x| x.trim())
-        {
-            let entry = rules.entry(key.to_string()).or_insert(vec![]);
-            if rule == "no other bags" {
-                break;
-            }
-
-            let mut iter = rule.split(' ');
-            let num = iter.next()?;
-            let adjective = iter.next()?;
-            let color = iter.next()?;
-
-            entry.push((format!("{} {}", adjective, color), num.parse().unwrap()));
+        let entry = rules.entry(format!("{} {}", adj, color)).or_insert(vec![]);
+        for (count, adj, color) in bag_rules {
+            entry.push((format!("{} {}", adj, color), count))
         }
     }
 
