@@ -4,7 +4,9 @@ pub struct Group {
 }
 
 impl Group {
-    pub fn new(people: Vec<String>) -> Self {
+    pub fn new(group: &str) -> Self {
+        let people = group.lines().map(|person| person.to_string()).collect();
+
         Self { people }
     }
 
@@ -14,7 +16,7 @@ impl Group {
         for person in self.people.iter() {
             for vote in person.bytes() {
                 let idx = vote - b'a';
-                tally[idx as usize] += 1;
+                tally[usize::from(idx)] += 1;
             }
         }
 
@@ -51,10 +53,7 @@ impl Group {
 
 #[aoc_generator(day6)]
 pub fn generator(input: &str) -> Vec<Group> {
-    input
-        .split("\n\n")
-        .map(|group| Group::new(group.lines().map(|person| person.to_string()).collect()))
-        .collect()
+    input.split("\n\n").map(Group::new).collect()
 }
 
 #[aoc(day6, part1)]
@@ -108,24 +107,13 @@ b";
 
     #[test]
     pub fn test_input() {
-        fn to_owned(input: &[&[&str]]) -> Vec<Group> {
-            input
-                .iter()
-                .map(|row| Group::new(row.iter().map(|s| s.to_string()).collect()))
-                .collect()
+        fn to_owned(input: &[&str]) -> Vec<Group> {
+            input.iter().map(|row| Group::new(row)).collect()
         }
 
         assert_eq!(
             generator(SAMPLE),
-            to_owned(
-                &[
-                    &["abc"][..],
-                    &["a", "b", "c"][..],
-                    &["ab", "ac"][..],
-                    &["a", "a", "a", "a"][..],
-                    &["b"][..]
-                ][..]
-            )
+            to_owned(&["abc", "a\nb\nc", "ab\nac", "a\na\na\na", "b"][..])
         );
     }
 
