@@ -1,19 +1,19 @@
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
-pub struct ColoredBags {
-    bags: HashMap<BagColor, Vec<(BagColor, usize)>>,
+pub struct BagRules {
+    rules: HashMap<BagColor, Vec<(BagColor, usize)>>,
 }
 
-impl ColoredBags {
-    fn contains_shiny_gold_bag(&self, color: &str) -> bool {
-        self.bags[color]
+impl BagRules {
+    fn contains(&self, needle: &str, target: &str) -> bool {
+        self.rules[needle]
             .iter()
-            .any(|(color, _)| color == "shiny gold" || self.contains_shiny_gold_bag(color))
+            .any(|(color, _)| color == target || self.contains(color, target))
     }
 
     fn count_contained(&self, color: &str) -> usize {
-        self.bags[color]
+        self.rules[color]
             .iter()
             .map(|(c, count)| count * self.count_contained(c))
             .sum::<usize>()
@@ -24,25 +24,25 @@ impl ColoredBags {
 type BagColor = String;
 
 #[aoc_generator(day7)]
-pub fn generator(input: &str) -> Option<ColoredBags> {
-    let mut bags = HashMap::new();
+pub fn generator(input: &str) -> Option<BagRules> {
+    let mut rules = HashMap::new();
 
     for line in input.lines() {
         let mut parse_iter = line.split(" bags contain ");
 
         let key = parse_iter.next()?;
-        for bag in parse_iter
+        for rule in parse_iter
             .next()?
             .split(&[',', '.'][..])
             .filter(|x| !x.is_empty())
             .map(|x| x.trim())
         {
-            let entry = bags.entry(key.to_string()).or_insert(vec![]);
-            if bag == "no other bags" {
+            let entry = rules.entry(key.to_string()).or_insert(vec![]);
+            if rule == "no other bags" {
                 break;
             }
 
-            let mut iter = bag.split(' ');
+            let mut iter = rule.split(' ');
             let num = iter.next()?;
             let adjective = iter.next()?;
             let color = iter.next()?;
@@ -51,20 +51,20 @@ pub fn generator(input: &str) -> Option<ColoredBags> {
         }
     }
 
-    Some(ColoredBags { bags })
+    Some(BagRules { rules })
 }
 
 #[aoc(day7, part1)]
-pub fn part1(inputs: &ColoredBags) -> usize {
+pub fn part1(inputs: &BagRules) -> usize {
     inputs
-        .bags
+        .rules
         .iter()
-        .filter(|&(color, _)| inputs.contains_shiny_gold_bag(color))
+        .filter(|&(color, _)| inputs.contains(color, "shiny gold"))
         .count()
 }
 
 #[aoc(day7, part2)]
-pub fn part2(inputs: &ColoredBags) -> usize {
+pub fn part2(inputs: &BagRules) -> usize {
     inputs.count_contained("shiny gold") - 1
 }
 
