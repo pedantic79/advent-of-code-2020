@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
 pub struct ColoredBags {
@@ -24,42 +24,34 @@ impl ColoredBags {
 type BagColor = String;
 
 #[aoc_generator(day7)]
-pub fn generator(input: &str) -> ColoredBags {
+pub fn generator(input: &str) -> Option<ColoredBags> {
     let mut bags = HashMap::new();
 
     for line in input.lines() {
-        let mut parse_iter = line.split("bags contain");
+        let mut parse_iter = line.split(" bags contain ");
 
-        let key = parse_iter.next().unwrap().trim();
-        let value = parse_iter.next().unwrap().trim();
-
-        let value = value
+        let key = parse_iter.next()?;
+        for bag in parse_iter
+            .next()?
             .split(&[',', '.'][..])
             .filter(|x| !x.is_empty())
             .map(|x| x.trim())
-            .collect::<Vec<_>>();
-
-        if value == ["no other bags"] {
-            bags.entry(key.to_string()).or_insert(vec![]);
-            continue;
-        }
-
-        for bag in value {
-            let mut iter = bag.split(' ');
-            let num = iter.next().unwrap();
-            let adjective = iter.next().unwrap();
-            let color = iter.next().unwrap();
-
+        {
             let entry = bags.entry(key.to_string()).or_insert(vec![]);
+            if bag == "no other bags" {
+                break;
+            }
 
-            entry.push((
-                format!("{} {}", adjective, color),
-                num.parse::<usize>().unwrap(),
-            ));
+            let mut iter = bag.split(' ');
+            let num = iter.next()?;
+            let adjective = iter.next()?;
+            let color = iter.next()?;
+
+            entry.push((format!("{} {}", adjective, color), num.parse().unwrap()));
         }
     }
 
-    ColoredBags { bags }
+    Some(ColoredBags { bags })
 }
 
 #[aoc(day7, part1)]
@@ -106,19 +98,19 @@ dark violet bags contain no other bags.";
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE1)), 4);
+        assert_eq!(part1(&generator(SAMPLE1).unwrap()), 4);
     }
 
     #[test]
     pub fn test2() {
-        let bags = generator(SAMPLE1);
+        let bags = generator(SAMPLE1).unwrap();
 
         assert_eq!(bags.count_contained("faded blue"), 1);
         assert_eq!(bags.count_contained("vibrant plum"), 12);
         assert_eq!(bags.count_contained("dark olive"), 8);
 
-        assert_eq!(part2(&generator(SAMPLE1)), 32);
-        assert_eq!(part2(&generator(SAMPLE2)), 126);
+        assert_eq!(part2(&generator(SAMPLE1).unwrap()), 32);
+        assert_eq!(part2(&generator(SAMPLE2).unwrap()), 126);
     }
 
     mod regression {
@@ -130,8 +122,8 @@ dark violet bags contain no other bags.";
         #[test]
         pub fn test() {
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
+            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
         }
     }
 }
