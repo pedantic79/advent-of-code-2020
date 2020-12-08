@@ -100,6 +100,25 @@ mod parser {
     }
 }
 
+#[aoc_generator(day7, part1, reverse)]
+pub fn generator_part1(input: &str) -> HashMap<String, Vec<String>> {
+    let mut parents = HashMap::new();
+
+    // Build a map from child to parent
+    for line in input.lines() {
+        let (parent_adj, parent_color, bag_rules) = parser::rule(line).unwrap().1;
+
+        for (_, adj, color) in bag_rules {
+            parents
+                .entry(format!("{} {}", adj, color))
+                .or_insert_with(Vec::new)
+                .push(format!("{} {}", parent_adj, parent_color));
+        }
+    }
+
+    parents
+}
+
 #[aoc_generator(day7)]
 pub fn generator(input: &str) -> Option<BagRules> {
     let mut rules = HashMap::new();
@@ -107,7 +126,10 @@ pub fn generator(input: &str) -> Option<BagRules> {
     for line in input.lines() {
         let (adj, color, bag_rules) = parser::rule(line).ok()?.1;
 
-        let entry = rules.entry(format!("{} {}", adj, color)).or_insert(vec![]);
+        let entry = rules
+            .entry(format!("{} {}", adj, color))
+            .or_insert_with(Vec::new);
+
         for (count, adj, color) in bag_rules {
             entry.push((format!("{} {}", adj, color), count))
         }
@@ -123,6 +145,23 @@ pub fn part1(inputs: &BagRules) -> usize {
         .iter()
         .filter(|&(color, _)| inputs.contains(color, "shiny gold"))
         .count()
+}
+
+#[aoc(day7, part1, reverse)]
+pub fn part1_two(parent_map: &HashMap<String, Vec<String>>) -> usize {
+    let mut stack = vec!["shiny gold"];
+    let mut ans = std::collections::HashSet::new();
+
+    while let Some(current) = stack.pop() {
+        if let Some(parents) = parent_map.get(current) {
+            for parent in parents {
+                stack.push(parent);
+                ans.insert(parent);
+            }
+        }
+    }
+
+    ans.len()
 }
 
 #[aoc(day7, part2)]
