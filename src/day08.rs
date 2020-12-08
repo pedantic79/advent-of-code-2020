@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::convert::TryFrom;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct SimpleComputer {
@@ -18,9 +19,9 @@ impl SimpleComputer {
                 Instruction::Acc(n) => accumulator += n,
                 Instruction::Jmp(n) => {
                     if n.is_negative() {
-                        pc -= n.abs() as usize;
+                        pc -= usize::try_from(n.abs()).unwrap()
                     } else {
-                        pc += n as usize;
+                        pc += usize::try_from(n).unwrap()
                     }
 
                     continue;
