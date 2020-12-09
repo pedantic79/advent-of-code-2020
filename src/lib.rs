@@ -11,4 +11,17 @@ pub mod day07;
 pub mod day08;
 pub mod day09;
 
+trait MinMaxIterator: Iterator {
+    fn min_max<'a, T>(mut self) -> Option<(&'a T, &'a T)>
+    where
+        T: Ord,
+        Self: Iterator<Item = &'a T> + Sized,
+    {
+        self.next()
+            .map(|x| self.fold((x, x), |(min, max), num| (min.min(num), max.max(num))))
+    }
+}
+
+impl<T: ?Sized> MinMaxIterator for T where T: Iterator {}
+
 aoc_lib! { year = 2020 }
