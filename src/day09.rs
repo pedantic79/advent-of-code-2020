@@ -1,63 +1,132 @@
-use std::{cmp::Ordering, collections::HashSet};
+use crate::MinMaxIterator;
+use std::cmp::Ordering::{Equal, Greater, Less};
 
 #[aoc_generator(day9)]
-pub fn generator(input: &str) -> Option<Vec<i64>> {
-    input.lines().map(|x| x.parse().ok()).collect()
+pub fn generator(input: &str) -> Option<Vec<usize>> {
+    input.lines().map(|line| line.parse().ok()).collect()
 }
 
-fn sum2(nums: &[i64], total: i64) -> Option<i64> {
-    let mut seen = HashSet::new();
-
-    for &num in nums {
-        let target = total - num;
-        if seen.contains(&target) {
-            return None;
-        } else {
-            seen.insert(num);
-        }
-    }
-
-    Some(total)
+fn find_invalid((total, haystack): (&usize, &[usize])) -> Option<usize> {
+    haystack
+        .iter()
+        .find(|&&num| num < *total && haystack.contains(&(total - num)))
+        .copied()
+        .xor(Some(*total))
 }
 
-fn find_range_bounds(inputs: &[i64], target: i64) -> (usize, usize) {
-    for start in 0..inputs.len() {
-        let mut sum = 0;
-        for (i, input) in inputs.iter().enumerate().skip(start) {
-            sum += input;
+fn find_range_bounds(inputs: &[usize], target: usize) -> (usize, usize) {
+    (0..inputs.len())
+        .find_map(|start| {
+            let mut sum = 0;
+            for (end, num) in inputs.iter().enumerate().skip(start) {
+                sum += num;
 
-            match sum.cmp(&target) {
-                Ordering::Less => {}
-                Ordering::Equal => return (start, i),
-                Ordering::Greater => break,
+                return match sum.cmp(&target) {
+                    Less => continue,
+                    Equal => Some((start, end)),
+                    Greater => None,
+                };
             }
-        }
-    }
 
-    unreachable!()
+            unreachable!()
+        })
+        .unwrap()
 }
 
-fn find_invalid(input: &[i64], preamble: usize) -> i64 {
-    input
+fn part1_with_size(inputs: &[usize], preamble: usize) -> usize {
+    inputs
         .windows(preamble + 1)
-        .find_map(|range| sum2(&range[..preamble], range.last().copied().unwrap()))
+        .find_map(|range| find_invalid(range.split_last().unwrap()))
         .unwrap()
 }
 
 #[aoc(day9, part1)]
-pub fn part1(inputs: &[i64]) -> i64 {
-    find_invalid(inputs, 25)
+pub fn part1(inputs: &[usize]) -> usize {
+    part1_with_size(inputs, 25)
+}
+
+fn part2_with_size(inputs: &[usize], preamble: usize) -> usize {
+    let (left, right) = find_range_bounds(inputs, part1_with_size(inputs, preamble));
+    let (min, max) = inputs[left..=right].iter().min_max().unwrap();
+
+    min + max
 }
 
 #[aoc(day9, part2)]
-pub fn part2(inputs: &[i64]) -> i64 {
-    let target = find_invalid(inputs, 25);
-    let (left, right) = find_range_bounds(inputs, target);
+pub fn part2(inputs: &[usize]) -> usize {
+    part2_with_size(inputs, 25)
+}
 
-    let min = inputs[left..=right].iter().min().unwrap();
-    let max = inputs[left..=right].iter().max().unwrap();
+#[aoc(day9, part2, prefix1)]
+pub fn part2_prefix1(inputs: &[usize]) -> usize {
+    let (left, right) = find_range_bounds_prefix1(inputs, part1_with_size(inputs, 25));
+    let (min, max) = inputs[left..=right].iter().min_max().unwrap();
 
     min + max
+}
+
+#[aoc(day9, part2, prefix2)]
+pub fn part2_prefix2(inputs: &[usize]) -> usize {
+    let (left, right) = find_range_bounds_prefix2(inputs, part1_with_size(inputs, 25));
+    let (min, max) = inputs[left..=right].iter().min_max().unwrap();
+
+    min + max
+}
+
+fn find_range_bounds_prefix1(inputs: &[usize], target: usize) -> (usize, usize) {
+    let prefixes = inputs
+        .iter()
+        .scan(0, |sum, &x| {
+            *sum += x;
+            Some(*sum)
+        })
+        .collect::<Vec<_>>();
+
+    prefixes
+        .iter()
+        .enumerate()
+        .find_map(|(start, &prefix)| {
+            for (end, sum) in prefixes
+                .iter()
+                .enumerate()
+                .skip(start + 2)
+                .map(|(end, &last)| (end, last - prefix))
+            {
+                return match sum.cmp(&target) {
+                    Less => continue,
+                    Equal => Some((start, end)),
+                    Greater => None,
+                };
+            }
+
+            unreachable!()
+        })
+        .unwrap()
+}
+
+fn find_range_bounds_prefix2(inputs: &[usize], target: usize) -> (usize, usize) {
+    let prefixes = inputs
+        .iter()
+        .scan(0, |sum, &x| {
+            *sum += x;
+            Some(*sum)
+        })
+        .collect::<Vec<_>>();
+
+    prefixes
+        .iter()
+        .enumerate()
+        .find_map(|(start, &prefix)| {
+            prefixes
+                .iter()
+                .enumerate()
+                .skip(start + 2)
+                .map(|(end, &last)| (end, last - prefix))
+                .take_while(|&(_, sum)| sum <= target)
+                .find(|&(_, sum)| sum == target)
+                .map(|(end, _)| (start, end))
+        })
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -98,27 +167,19 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        assert_eq!(find_invalid(&generator(SAMPLE).unwrap(), 5), 127);
+        assert_eq!(part1_with_size(&generator(SAMPLE).unwrap(), 5), 127);
     }
 
     #[test]
     pub fn test2() {
-        let inputs = generator(SAMPLE).unwrap();
-
-        let (left, right) =
-            find_range_bounds(&inputs, find_invalid(&generator(SAMPLE).unwrap(), 5));
-
-        let min = inputs[left..right].iter().min().unwrap();
-        let max = inputs[left..right].iter().max().unwrap();
-
-        assert_eq!(min + max, 62)
+        assert_eq!(part2_with_size(&generator(SAMPLE).unwrap(), 5), 62);
     }
 
     mod regression {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day9.txt");
-        const ANSWERS: (i64, i64) = (1504371145, 183278487);
+        const ANSWERS: (usize, usize) = (1504371145, 183278487);
 
         #[test]
         pub fn test() {
