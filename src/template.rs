@@ -1,5 +1,5 @@
 #[derive(Debug, PartialEq)]
-pub struct Object();
+pub struct Object {}
 
 #[aoc_generator(dayN)]
 pub fn generator(input: &str) -> Object {
@@ -7,12 +7,12 @@ pub fn generator(input: &str) -> Object {
 }
 
 #[aoc(dayN, part1)]
-pub fn part1(inputs: &Object) -> i32 {
+pub fn part1(inputs: &Object) -> usize {
     unimplemented!()
 }
 
 #[aoc(dayN, part2)]
-pub fn part2(inputs: &Object) -> i32 {
+pub fn part2(inputs: &Object) -> usize {
     unimplemented!()
 }
 
@@ -24,7 +24,9 @@ mod tests {
 
     #[test]
     pub fn test_input() {
-        assert_eq!(generator(SAMPLE), Object());
+        println!("{:?}", generator(SAMPLE));
+
+        // assert_eq!(generator(SAMPLE), Object());
     }
 
     #[test]
