@@ -73,6 +73,34 @@ pub fn part2_prefix2(inputs: &[usize]) -> usize {
     min + max
 }
 
+#[aoc(day9, part2, simple)]
+pub fn part2_simple(inputs: &[usize]) -> usize {
+    let target = part1_with_size(inputs, 25);
+    let mut sum = 0;
+    let mut start = 0;
+    let mut end = 0;
+
+    loop {
+        while sum < target {
+            sum += inputs[end];
+            end += 1;
+        }
+
+        while sum > target {
+            sum -= inputs[start];
+            start += 1;
+        }
+
+        if sum == target {
+            break;
+        }
+    }
+
+    let (min, max) = inputs[start..end].iter().min_max().unwrap();
+
+    min + max
+}
+
 fn find_range_bounds_prefix1(inputs: &[usize], target: usize) -> (usize, usize) {
     let prefixes = inputs
         .iter()
