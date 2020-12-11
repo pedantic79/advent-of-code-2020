@@ -1,25 +1,27 @@
-#[derive(PartialEq, Copy, Clone, Debug)]
-enum GridState {
+#[derive(PartialEq, Copy, Clone)]
+enum SeatState {
     Empty,
     Occupied,
     Blank,
 }
 
-impl std::fmt::Display for GridState {
+impl std::fmt::Debug for SeatState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let c = match self {
-            GridState::Empty => 'L',
-            GridState::Occupied => '#',
-            GridState::Blank => '.',
-        };
-
-        write!(f, "{}", c)
+        write!(
+            f,
+            "{}",
+            match self {
+                SeatState::Empty => 'L',
+                SeatState::Occupied => '#',
+                SeatState::Blank => '.',
+            }
+        )
     }
 }
 
-impl GridState {
+impl SeatState {
     fn occupied(&self) -> usize {
-        if let GridState::Occupied = self {
+        if let SeatState::Occupied = self {
             1
         } else {
             0
@@ -27,20 +29,36 @@ impl GridState {
     }
 }
 
+#[derive(Copy, Clone)]
+enum Direction {
+    Increase,
+    Decrease,
+    Steady,
+}
+
+impl Direction {
+    fn next(&self, max: usize, x: usize) -> usize {
+        match self {
+            Direction::Increase => max.min(x + 1),
+            Direction::Decrease => x.wrapping_sub(1),
+            Direction::Steady => x,
+        }
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub struct Floor {
-    floor: Vec<Vec<GridState>>,
+    floor: Vec<Vec<SeatState>>,
 }
 
 impl std::fmt::Debug for Floor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for row in &self.floor {
-            let r = row
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>()
-                .concat();
-            writeln!(f, "{}", r)?
+            for seat in row.iter() {
+                write!(f, "{:?}", seat)?;
+            }
+
+            writeln!(f)?;
         }
 
         Ok(())
@@ -48,154 +66,123 @@ impl std::fmt::Debug for Floor {
 }
 
 impl Floor {
-    fn count_neighbors(&self, row: usize, col: usize) -> usize {
-        let mut count = 0;
+    fn queen_iterator(
+        &self,
+        row: usize,
+        col: usize,
+        delta_r: Direction,
+        delta_c: Direction,
+    ) -> QueenIterator {
+        QueenIterator {
+            row,
+            col,
+            delta_r,
+            delta_c,
+            max_r: self.floor.len(),
+            max_c: self.floor[0].len(),
+            floor: &self.floor,
+        }
+    }
 
+    fn count_neighbors(&self, row: usize, col: usize) -> usize {
         let row_min = row.saturating_sub(1);
-        let row_max = if row + 1 < self.floor.len() {
-            row + 1
-        } else {
-            row
-        };
+        let row_max = (row + 1).min(self.floor.len() - 1);
 
         let col_min = col.saturating_sub(1);
-        let col_max = if col + 1 < self.floor[0].len() {
-            col + 1
-        } else {
-            col
-        };
+        let col_max = (col + 1).min(self.floor[0].len() - 1);
 
-        for floor_row in self.floor[row_min..=row_max].iter() {
-            count += floor_row[col_min..=col_max]
-                .iter()
-                .map(|x| x.occupied())
-                .sum::<usize>();
-        }
-
-        count.saturating_sub(self.floor[row][col].occupied())
+        self.floor[row_min..=row_max]
+            .iter()
+            .map(|floor_row| {
+                floor_row[col_min..=col_max]
+                    .iter()
+                    .map(|x| x.occupied())
+                    .sum::<usize>()
+            })
+            .sum::<usize>()
+            .saturating_sub(self.floor[row][col].occupied())
     }
 
     fn count_queen(&self, row: usize, col: usize) -> usize {
-        let mut count = 0;
-
-        //left
-        count += self.floor[row][..col]
-            .iter()
-            .rev()
-            .find(|x| x != &&GridState::Blank)
-            .unwrap_or(&GridState::Blank)
-            .occupied();
-        //right
-        count += self.floor[row][(col + 1)..]
-            .iter()
-            .find(|x| x != &&GridState::Blank)
-            .unwrap_or(&GridState::Blank)
-            .occupied();
-
-        //up
-        count += self.floor[..row]
-            .iter()
-            .rev()
-            .map(|r| r[col])
-            .find(|x| x != &GridState::Blank)
-            .unwrap_or(GridState::Blank)
-            .occupied();
-        //down
-        count += self.floor[(row + 1)..]
-            .iter()
-            .map(|r| r[col])
-            .find(|x| x != &GridState::Blank)
-            .unwrap_or(GridState::Blank)
-            .occupied();
-
-        let mut i = 1;
-        while let Some(seat) = self
-            .floor
-            .get(row.wrapping_sub(i))
-            .and_then(|r| r.get(col.wrapping_sub(i)))
-        {
-            if seat == &GridState::Blank {
-                i += 1;
-                continue;
-            }
-            count += seat.occupied();
-            break;
-        }
-
-        i = 1;
-        while let Some(seat) = self
-            .floor
-            .get(row.wrapping_sub(i))
-            .and_then(|r| r.get(col + i))
-        {
-            if seat == &GridState::Blank {
-                i += 1;
-                continue;
-            }
-            count += seat.occupied();
-            break;
-        }
-
-        i = 1;
-        while let Some(seat) = self.floor.get(row + i).and_then(|r| r.get(col + i)) {
-            if seat == &GridState::Blank {
-                i += 1;
-                continue;
-            }
-            count += seat.occupied();
-            break;
-        }
-
-        i = 1;
-        while let Some(seat) = self
-            .floor
-            .get(row + i)
-            .and_then(|r| r.get(col.wrapping_sub(i)))
-        {
-            if seat == &GridState::Blank {
-                i += 1;
-                continue;
-            }
-            count += seat.occupied();
-            break;
-        }
-
-        count
+        [
+            (Direction::Steady, Direction::Decrease),
+            (Direction::Steady, Direction::Increase),
+            (Direction::Decrease, Direction::Steady),
+            (Direction::Increase, Direction::Steady),
+            (Direction::Decrease, Direction::Decrease),
+            (Direction::Decrease, Direction::Increase),
+            (Direction::Increase, Direction::Increase),
+            (Direction::Increase, Direction::Decrease),
+        ]
+        .iter()
+        .map(|&(delta_r, delta_c)| {
+            self.queen_iterator(row, col, delta_r, delta_c)
+                .find_map(|x| {
+                    if x != &SeatState::Blank {
+                        None
+                    } else {
+                        Some(x.occupied())
+                    }
+                })
+                .unwrap_or(0)
+        })
+        .sum()
     }
 
-    fn rule(&self, row: usize, col: usize, threshold: usize, part1: bool) -> GridState {
+    fn rule<F>(&self, row: usize, col: usize, threshold: usize, count_fn: &F) -> SeatState
+    where
+        F: Fn(&Self, usize, usize) -> usize,
+    {
         let seat = self.floor[row][col];
-        if seat == GridState::Blank {
+        if seat == SeatState::Blank {
             return seat;
         }
 
-        // let count = self.count_neighbors(row, col);
+        let occ_count = count_fn(self, row, col);
 
-        let occ_count = if part1 {
-            self.count_neighbors(row, col)
-        } else {
-            self.count_queen(row, col)
-        };
-
-        if seat == GridState::Empty && occ_count == 0 {
-            GridState::Occupied
-        } else if seat == GridState::Occupied && occ_count >= threshold {
-            GridState::Empty
+        if seat == SeatState::Empty && occ_count == 0 {
+            SeatState::Occupied
+        } else if seat == SeatState::Occupied && occ_count >= threshold {
+            SeatState::Empty
         } else {
             seat
         }
     }
 
-    fn tick(&self, threshold: usize, part1: bool) -> Self {
-        let mut floor = vec![vec![GridState::Blank; self.floor[0].len()]; self.floor.len()];
+    fn tick<F>(&self, threshold: usize, count_fn: &F) -> Self
+    where
+        F: Fn(&Self, usize, usize) -> usize,
+    {
+        let mut floor = vec![vec![SeatState::Blank; self.floor[0].len()]; self.floor.len()];
 
         for (r, row) in floor.iter_mut().enumerate() {
             for (c, cell) in row.iter_mut().enumerate() {
-                *cell = self.rule(r, c, threshold, part1);
+                *cell = self.rule(r, c, threshold, count_fn);
             }
         }
 
         Self { floor }
+    }
+}
+
+struct QueenIterator<'a> {
+    row: usize,
+    col: usize,
+    max_r: usize,
+    max_c: usize,
+    delta_r: Direction,
+    delta_c: Direction,
+    floor: &'a [Vec<SeatState>],
+}
+
+impl<'a> Iterator for QueenIterator<'a> {
+    type Item = &'a SeatState;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.row = self.delta_r.next(self.max_r, self.row);
+        self.col = self.delta_c.next(self.max_c, self.col);
+
+        self.floor.get(self.row).and_then(|row| row.get(self.col))
     }
 }
 
@@ -207,9 +194,9 @@ pub fn generator(input: &str) -> Floor {
             .map(|line| {
                 line.chars()
                     .map(|x| match x {
-                        'L' => GridState::Empty,
-                        '.' => GridState::Blank,
-                        '#' => GridState::Occupied,
+                        'L' => SeatState::Empty,
+                        '.' => SeatState::Blank,
+                        '#' => SeatState::Occupied,
                         _ => panic!("unknown"),
                     })
                     .collect()
@@ -218,12 +205,12 @@ pub fn generator(input: &str) -> Floor {
     }
 }
 
-#[aoc(day11, part1)]
-pub fn part1(inputs: &Floor) -> usize {
-    let mut current = inputs.clone();
-
+fn solve<F>(mut current: Floor, threshold: usize, count_fn: F) -> usize
+where
+    F: Fn(&Floor, usize, usize) -> usize,
+{
     loop {
-        let next = current.tick(4, true);
+        let next = current.tick(threshold, &count_fn);
         if next == current {
             break;
         }
@@ -239,26 +226,14 @@ pub fn part1(inputs: &Floor) -> usize {
         .sum()
 }
 
+#[aoc(day11, part1)]
+pub fn part1(inputs: &Floor) -> usize {
+    solve(inputs.clone(), 4, Floor::count_neighbors)
+}
+
 #[aoc(day11, part2)]
 pub fn part2(inputs: &Floor) -> usize {
-    let mut current = inputs.clone();
-
-    loop {
-        let next = current.tick(5, false);
-
-        if next == current {
-            break;
-        }
-
-        current = next;
-    }
-
-    current
-        .floor
-        .iter()
-        .flat_map(|row| row.iter())
-        .map(|s| s.occupied())
-        .sum()
+    solve(inputs.clone(), 5, Floor::count_queen)
 }
 
 #[cfg(test)]
@@ -278,9 +253,10 @@ L.LLLLL.LL";
 
     #[test]
     pub fn test_input() {
-        println!("{:?}", generator(SAMPLE));
-
-        // assert_eq!(generator(SAMPLE), Object());
+        assert_eq!(
+            format!("{:?}", generator(SAMPLE)).trim_end_matches('\n'),
+            SAMPLE
+        );
     }
 
     #[test]
