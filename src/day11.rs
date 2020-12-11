@@ -37,9 +37,9 @@ enum Direction {
 }
 
 impl Direction {
-    fn next(&self, max: usize, x: usize) -> usize {
+    fn next(&self, x: usize) -> usize {
         match self {
-            Direction::Increase => max.min(x + 1),
+            Direction::Increase => x + 1,
             Direction::Decrease => x.wrapping_sub(1),
             Direction::Steady => x,
         }
@@ -78,8 +78,6 @@ impl Floor {
             col,
             delta_r,
             delta_c,
-            max_r: self.floor.len(),
-            max_c: self.floor[0].len(),
             floor: &self.floor,
         }
     }
@@ -117,13 +115,7 @@ impl Floor {
         .iter()
         .map(|&(delta_r, delta_c)| {
             self.queen_iterator(row, col, delta_r, delta_c)
-                .find_map(|x| {
-                    if x != &SeatState::Blank {
-                        None
-                    } else {
-                        Some(x.occupied())
-                    }
-                })
+                .find_map(|x| Some(x.occupied()).filter(|_| x != &SeatState::Blank))
                 .unwrap_or(0)
         })
         .sum()
@@ -168,8 +160,6 @@ impl Floor {
 struct QueenIterator<'a> {
     row: usize,
     col: usize,
-    max_r: usize,
-    max_c: usize,
     delta_r: Direction,
     delta_c: Direction,
     floor: &'a [Vec<SeatState>],
@@ -179,8 +169,8 @@ impl<'a> Iterator for QueenIterator<'a> {
     type Item = &'a SeatState;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.row = self.delta_r.next(self.max_r, self.row);
-        self.col = self.delta_c.next(self.max_c, self.col);
+        self.row = self.delta_r.next(self.row);
+        self.col = self.delta_c.next(self.col);
 
         self.floor.get(self.row).and_then(|row| row.get(self.col))
     }
