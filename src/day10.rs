@@ -1,11 +1,10 @@
 #[aoc_generator(day10)]
 pub fn generator(input: &str) -> Vec<usize> {
     let mut adaptors: Vec<usize> = input.lines().map(|l| l.parse().unwrap()).collect();
-    let max = adaptors.iter().max().copied().unwrap();
 
     adaptors.push(0);
-    adaptors.push(max + 3);
     adaptors.sort_unstable();
+    adaptors.push(adaptors.last().unwrap() + 3);
 
     adaptors
 }
@@ -59,6 +58,19 @@ pub fn part2(inputs: &[usize]) -> usize {
     dp.last().copied().unwrap()
 }
 
+#[aoc(day10, part2, alt)]
+pub fn part2_alt(inputs: &[usize]) -> usize {
+    inputs
+        .windows(2)
+        .fold((1, 0, 0), |(paths_0, paths_1, paths_2), w| {
+            match w[1] - w[0] {
+                3 => (paths_0, 0, 0),
+                1 => (paths_0 + paths_1, paths_1 + paths_2, paths_0),
+                _ => unreachable!(),
+            }
+        })
+        .0
+}
 #[cfg(test)]
 mod tests {
     use super::*;
