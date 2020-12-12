@@ -141,19 +141,17 @@ impl Floor {
         }
     }
 
-    fn tick<F>(&self, threshold: usize, count_fn: &F) -> Self
+    fn tick<F>(&self, threshold: usize, count_fn: &F, floor: &mut [Vec<SeatState>])
     where
         F: Fn(&Self, usize, usize) -> usize,
     {
-        let mut floor = vec![vec![SeatState::Blank; self.floor[0].len()]; self.floor.len()];
+        // let mut floor = vec![vec![SeatState::Blank; self.floor[0].len()]; self.floor.len()];
 
         for (r, row) in floor.iter_mut().enumerate() {
             for (c, cell) in row.iter_mut().enumerate() {
                 *cell = self.rule(r, c, threshold, count_fn);
             }
         }
-
-        Self { floor }
     }
 }
 
@@ -199,13 +197,15 @@ fn solve<F>(mut current: Floor, threshold: usize, count_fn: F) -> usize
 where
     F: Fn(&Floor, usize, usize) -> usize,
 {
+    let mut next = current.clone();
+
     loop {
-        let next = current.tick(threshold, &count_fn);
+        current.tick(threshold, &count_fn, &mut next.floor);
         if next == current {
             break;
         }
 
-        current = next;
+        std::mem::swap(&mut current, &mut next);
     }
 
     current
