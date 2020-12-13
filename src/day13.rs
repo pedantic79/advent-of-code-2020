@@ -115,6 +115,39 @@ pub fn part2_crt(schedule: &BusSchedule) -> usize {
     sum % product
 }
 
+#[aoc(day13, part2, brute)]
+pub fn part2_brute(_schedule: &BusSchedule) -> usize {
+    use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+    const START: usize = 407; // MAX - OFFSET
+    const STEP: usize = 457; // MAX
+
+    #[inline(always)]
+    fn check_mod(m: usize, n: usize) -> bool {
+        n % m == 0
+    }
+
+    // 644_101_264_100 * 457 + 407 is the right answer
+    (544_101_264_100..=usize::MAX)
+        .into_par_iter()
+        .find_first(|multiplier| {
+            let answer = STEP * multiplier + START;
+
+            check_mod(13, answer + 32)
+                && check_mod(17, answer + 67)
+                && check_mod(19, answer)
+                && check_mod(23, answer + 27)
+                && check_mod(29, answer + 48)
+                && check_mod(37, answer + 13)
+                && check_mod(41, answer + 60)
+                && check_mod(383, answer + 19)
+                && check_mod(457, answer + 50)
+        })
+        .unwrap()
+        * STEP
+        + START
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
