@@ -65,7 +65,7 @@ pub fn part2_alt(inputs: &[usize]) -> usize {
         .fold((1, 0, 0), |(paths_0, paths_1, paths_2), w| {
             match w[1] - w[0] {
                 3 => (paths_0, 0, 0),
-                1 => (paths_0 + paths_1, paths_1 + paths_2, paths_0),
+                1 => (paths_0 + paths_1, paths_0 + paths_2, paths_0),
                 _ => unreachable!(),
             }
         })
