@@ -1,4 +1,30 @@
 #[derive(Debug, PartialEq)]
+pub enum Op {
+    North(i32),
+    South(i32),
+    East(i32),
+    West(i32),
+    Left(i32),
+    Right(i32),
+    Forward(i32),
+}
+
+impl From<(u8, i32)> for Op {
+    fn from((b, n): (u8, i32)) -> Self {
+        match b {
+            b'N' => Op::North(n),
+            b'S' => Op::South(n),
+            b'E' => Op::East(n),
+            b'W' => Op::West(n),
+            b'L' => Op::Left(n),
+            b'R' => Op::Right(n),
+            b'F' => Op::Forward(n),
+            _ => panic!("invalid op"),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 enum Direction {
     East,
     North,
@@ -57,10 +83,10 @@ impl Ship {
 }
 
 #[aoc_generator(day12)]
-pub fn generator(input: &str) -> Vec<(u8, i32)> {
+pub fn generator(input: &str) -> Vec<Op> {
     input
         .lines()
-        .map(|x| (x.bytes().next().unwrap(), x[1..].parse().unwrap()))
+        .map(|x| (x.bytes().next().unwrap(), x[1..].parse().unwrap()).into())
         .collect()
 }
 
@@ -83,7 +109,7 @@ fn rotate_left((mut x, mut y): (i32, i32), times: usize) -> (i32, i32) {
 }
 
 #[aoc(day12, part2)]
-pub fn part2(inputs: &[(u8, i32)]) -> i32 {
+pub fn part2(inputs: &[Op]) -> i32 {
     let mut ship = Ship {
         x: 0,
         y: 0,
@@ -92,19 +118,18 @@ pub fn part2(inputs: &[(u8, i32)]) -> i32 {
 
     let mut waypoint = (10, 1);
 
-    for (op, amount) in inputs {
+    for op in inputs {
         match op {
-            b'N' => waypoint.1 += amount,
-            b'S' => waypoint.1 -= amount,
-            b'E' => waypoint.0 += amount,
-            b'W' => waypoint.0 -= amount,
-            b'L' => waypoint = rotate_left(waypoint, *amount as usize / 90),
-            b'R' => waypoint = rotate_right(waypoint, *amount as usize / 90),
-            b'F' => {
+            Op::North(amount) => waypoint.1 += amount,
+            Op::South(amount) => waypoint.1 -= amount,
+            Op::East(amount) => waypoint.0 += amount,
+            Op::West(amount) => waypoint.0 -= amount,
+            Op::Left(amount) => waypoint = rotate_left(waypoint, *amount as usize / 90),
+            Op::Right(amount) => waypoint = rotate_right(waypoint, *amount as usize / 90),
+            Op::Forward(amount) => {
                 ship.x += waypoint.0 * amount;
                 ship.y += waypoint.1 * amount;
             }
-            _ => panic!("invalid op"),
         }
     }
 
@@ -112,23 +137,22 @@ pub fn part2(inputs: &[(u8, i32)]) -> i32 {
 }
 
 #[aoc(day12, part1)]
-pub fn part1(inputs: &[(u8, i32)]) -> i32 {
+pub fn part1(inputs: &[Op]) -> i32 {
     let mut ship = Ship {
         x: 0,
         y: 0,
         direction: Direction::East,
     };
 
-    for (op, amount) in inputs {
+    for op in inputs {
         match op {
-            b'N' => ship.y += amount,
-            b'S' => ship.y -= amount,
-            b'E' => ship.x += amount,
-            b'W' => ship.x -= amount,
-            b'L' => ship.turn_left(*amount as usize / 90),
-            b'R' => ship.turn_right(*amount as usize / 90),
-            b'F' => ship.move_forward(*amount),
-            _ => panic!("invalid op"),
+            Op::North(amount) => ship.y += amount,
+            Op::South(amount) => ship.y -= amount,
+            Op::East(amount) => ship.x += amount,
+            Op::West(amount) => ship.x -= amount,
+            Op::Left(amount) => ship.turn_left(*amount as usize / 90),
+            Op::Right(amount) => ship.turn_right(*amount as usize / 90),
+            Op::Forward(amount) => ship.move_forward(*amount),
         }
     }
 
@@ -147,9 +171,11 @@ F11";
 
     #[test]
     pub fn test_input() {
+        use Op::*;
+
         assert_eq!(
             generator(SAMPLE),
-            vec![(b'F', 10), (b'N', 3), (b'F', 7), (b'R', 90), (b'F', 11),]
+            vec![Forward(10), North(3), Forward(7), Right(90), Forward(11),]
         );
     }
 
