@@ -13,6 +13,7 @@ pub mod day09;
 pub mod day10;
 pub mod day11;
 pub mod day12;
+pub mod day13;
 
 trait MinMaxIterator: Iterator {
     fn min_max<'a, T>(mut self) -> Option<(&'a T, &'a T)>
@@ -26,5 +27,24 @@ trait MinMaxIterator: Iterator {
 }
 
 impl<T: ?Sized> MinMaxIterator for T where T: Iterator {}
+
+pub fn mod_inv<T: num::Integer + Clone>(a: T, m: T) -> T {
+    a.extended_gcd(&m).x
+}
+
+pub fn mod_inv_unsigned<U: num::Num + PartialOrd + Copy + num::One + num::ToPrimitive>(
+    a: U,
+    m: U,
+) -> U {
+    let a = a % m;
+
+    for x in num::iter::range(U::one(), m) {
+        if (a * x) % m == U::one() {
+            return x;
+        }
+    }
+
+    U::one()
+}
 
 aoc_lib! { year = 2020 }
