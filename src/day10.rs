@@ -71,6 +71,33 @@ pub fn part2_alt(inputs: &[usize]) -> usize {
         })
         .0
 }
+
+#[aoc(day10, part2, memoize)]
+pub fn part2_memoize(inputs: &[usize]) -> usize {
+    fn solve(inputs: &[usize], index: usize, cache: &mut [usize]) -> usize {
+        if cache[index] > 0 {
+            return cache[index];
+        }
+
+        let mut total = 0;
+        for (j, input) in inputs.iter().enumerate().skip(index + 1) {
+            if input - inputs[index] > 3 {
+                break;
+            }
+
+            total += solve(inputs, j, cache);
+        }
+
+        cache[index] = total;
+        total
+    }
+
+    let mut cache = vec![0; inputs.len()];
+    cache[inputs.len() - 1] = 1;
+
+    solve(inputs, 0, &mut cache)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
