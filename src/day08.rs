@@ -118,8 +118,25 @@ acc +6";
 
     #[test]
     pub fn test_input() {
-        // assert_eq!(generator(SAMPLE), Object());
-        println!("{:?}", generator(SAMPLE));
+        use Instruction::*;
+        // println!("{:?}", generator(SAMPLE));
+
+        assert_eq!(
+            generator(SAMPLE),
+            SimpleComputer {
+                instructions: vec![
+                    Nop(0),
+                    Acc(1),
+                    Jmp(4),
+                    Acc(3),
+                    Jmp(-3),
+                    Acc(-99),
+                    Acc(1),
+                    Jmp(-4),
+                    Acc(6)
+                ]
+            }
+        );
     }
 
     #[test]
