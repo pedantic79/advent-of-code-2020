@@ -1,8 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::FromIterator};
 
 #[derive(Debug, PartialEq)]
 pub struct ProgramFragment {
-    mask: Vec<(usize, char)>,
+    mask: BitNumber,
     cmds: Vec<(usize, usize)>,
 }
 
@@ -20,7 +20,7 @@ fn parse_group(group: &str) -> ProgramFragment {
 
     // Discard everything left of the = on the first line, collect chars into array.
     let mask = line_iter.next().unwrap().split('=').nth(1).unwrap().trim();
-    let mask = mask.chars().rev().enumerate().collect();
+    let mask = mask.chars().rev().collect();
 
     // Rest of input from group
     let cmds = line_iter
@@ -53,14 +53,14 @@ pub fn part1(program: &[ProgramFragment]) -> usize {
 
     for fragment in program {
         for &(memory_location, mut value) in fragment.cmds.iter() {
-            for &(mask_index, mask_char) in fragment.mask.iter() {
+            for (mask_index, &mask_char) in fragment.mask.0.iter().enumerate() {
                 // get current bit
                 let current = (value >> mask_index) & 0x1;
 
                 // If they are different build a mask that flips it
                 let mask = match (mask_char, current) {
-                    ('1', 0) => 1 << mask_index,
-                    ('0', 1) => 1 << mask_index,
+                    (Bit::One, 0) => 1 << mask_index,
+                    (Bit::Zero, 1) => 1 << mask_index,
                     _ => continue,
                 };
 
@@ -81,44 +81,78 @@ enum Bit {
     Floating,
 }
 
-fn int_to_bitarray(mut num: usize) -> [Bit; 36] {
-    let mut ans = [Bit::Zero; 36];
-
-    for ans_ptr in ans.iter_mut().rev() {
-        let bit = num & 0x1 > 0;
-        *ans_ptr = if bit { Bit::One } else { Bit::Zero };
-        num >>= 1;
+impl From<char> for Bit {
+    fn from(x: char) -> Self {
+        match x {
+            '1' => Bit::One,
+            '0' => Bit::Zero,
+            'X' => Bit::Floating,
+            _ => panic!("invalid character"),
+        }
     }
-
-    ans
 }
 
-fn bitarray_to_int(array: [Bit; 36]) -> usize {
-    array.iter().fold(0, |total, bit| {
-        (total << 1) + if *bit == Bit::One { 1 } else { 0 }
-    })
-}
+#[derive(Debug, PartialEq)]
+struct BitNumber([Bit; 36]);
 
-fn permute(mut stack: Vec<[Bit; 36]>) -> Vec<[Bit; 36]> {
-    let mut ans = Vec::new();
+impl BitNumber {
+    fn permute(self) -> Vec<BitNumber> {
+        let mut stack = vec![(0, self.0)];
+        let mut ans = Vec::new();
 
-    'next: while let Some(mut array) = stack.pop() {
-        for i in 0..36 {
-            if array[i] == Bit::Floating {
-                array[i] = Bit::One;
-                stack.push(array);
+        'next: while let Some((start_idx, mut array)) = stack.pop() {
+            for i in start_idx..36 {
+                if array[i] == Bit::Floating {
+                    array[i] = Bit::One;
+                    stack.push((i + 1, array));
 
-                array[i] = Bit::Zero;
-                stack.push(array);
+                    array[i] = Bit::Zero;
+                    stack.push((i + 1, array));
 
-                continue 'next;
+                    continue 'next;
+                }
             }
+
+            ans.push(BitNumber(array));
         }
 
-        ans.push(array);
+        ans
     }
+}
 
-    ans
+impl From<usize> for BitNumber {
+    fn from(num: usize) -> Self {
+        let mut num = num;
+        let mut ans = [Bit::Zero; 36];
+
+        for ans_ptr in ans.iter_mut().rev() {
+            let bit = num & 0x1 > 0;
+            *ans_ptr = if bit { Bit::One } else { Bit::Zero };
+            num >>= 1;
+        }
+
+        Self(ans)
+    }
+}
+
+impl From<BitNumber> for usize {
+    fn from(array: BitNumber) -> Self {
+        array.0.iter().fold(0, |total, bit| {
+            (total << 1) + if *bit == Bit::One { 1 } else { 0 }
+        })
+    }
+}
+
+impl FromIterator<char> for BitNumber {
+    fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
+        let mut ans = [Bit::Zero; 36];
+
+        for (bit, target) in iter.into_iter().map(|x| x.into()).zip(ans.iter_mut()) {
+            *target = bit;
+        }
+
+        Self(ans)
+    }
 }
 
 #[aoc(day14, part2)]
@@ -127,19 +161,18 @@ pub fn part2(program: &[ProgramFragment]) -> usize {
 
     for fragment in program {
         for &(memory_location, value) in fragment.cmds.iter() {
-            let mut bit_mem_loc = int_to_bitarray(memory_location);
+            let mut bit_mem_loc = BitNumber::from(memory_location);
 
-            for &(mask_index, mask_v) in fragment.mask.iter() {
+            for (mask_index, &mask_v) in fragment.mask.0.iter().enumerate() {
                 match mask_v {
-                    '1' => bit_mem_loc[35 - mask_index] = Bit::One,
-                    'X' => bit_mem_loc[35 - mask_index] = Bit::Floating,
-                    '0' => {}
-                    _ => unreachable!(),
+                    Bit::One => bit_mem_loc.0[35 - mask_index] = Bit::One,
+                    Bit::Floating => bit_mem_loc.0[35 - mask_index] = Bit::Floating,
+                    Bit::Zero => {}
                 }
             }
 
-            for l in permute(vec![bit_mem_loc]) {
-                memory.insert(bitarray_to_int(l), value);
+            for l in bit_mem_loc.permute() {
+                memory.insert(usize::from(l), value);
             }
         }
     }
