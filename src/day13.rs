@@ -128,7 +128,7 @@ pub fn part2_brute(_schedule: &BusSchedule) -> usize {
     }
 
     // 644_101_264_100 * 457 + 407 is the right answer
-    (544_101_264_100..=usize::MAX)
+    (644_101_200_000..=usize::MAX)
         .into_par_iter()
         .find_first(|multiplier| {
             let answer = STEP * multiplier + START;
