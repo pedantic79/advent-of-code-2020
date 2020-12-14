@@ -1,65 +1,73 @@
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq)]
-pub struct Object {
-    mask: HashMap<usize, char>,
+pub struct ProgramFragment {
+    mask: Vec<(usize, char)>,
     cmds: Vec<(usize, usize)>,
 }
 
 #[aoc_generator(day14)]
-pub fn generator(input: &str) -> Vec<Object> {
+pub fn generator(input: &str) -> Vec<ProgramFragment> {
     input
         .split("mask ")
-        .filter(|x| !x.is_empty())
+        .filter(|group| !group.is_empty())
         .map(|group| parse_group(group))
         .collect()
 }
 
-fn parse_group(input: &str) -> Object {
-    let mut liter = input.lines();
+fn parse_group(group: &str) -> ProgramFragment {
+    let mut line_iter = group.lines();
 
-    let mask_s = liter.next().unwrap().split('=').nth(1).unwrap().trim();
+    // Discard everything left of the = on the first line, collect chars into array.
+    let mask = line_iter.next().unwrap().split('=').nth(1).unwrap().trim();
+    let mask = mask.chars().rev().enumerate().collect();
 
-    let mask = mask_s.chars().rev().enumerate().collect();
-
-    let cmds = liter
+    // Rest of input from group
+    let cmds = line_iter
         .map(|line| {
-            let mut l = line.split('=');
+            // Split on the equal
+            let mut cmd_iter = line.split('=');
+
+            // Get the characters between [ ]
+            let memory_loc = cmd_iter
+                .next()
+                .unwrap()
+                .split(&['[', ']'][..])
+                .nth(1)
+                .unwrap();
+
+            // return memory location and value
             (
-                l.next()
-                    .unwrap()
-                    .split(&['[', ']'][..])
-                    .nth(1)
-                    .unwrap()
-                    .parse()
-                    .unwrap(),
-                l.next().unwrap().trim().parse().unwrap(),
+                memory_loc.parse().unwrap(),
+                cmd_iter.next().unwrap().trim().parse().unwrap(),
             )
         })
         .collect::<Vec<(_, _)>>();
 
-    Object { mask, cmds }
+    ProgramFragment { mask, cmds }
 }
 
 #[aoc(day14, part1)]
-pub fn part1(group: &[Object]) -> usize {
+pub fn part1(program: &[ProgramFragment]) -> usize {
     let mut memory = HashMap::new();
 
-    for inputs in group {
-        for (location, value) in inputs.cmds.iter() {
-            let mut value = *value;
-            for (mloc, mval) in inputs.mask.iter() {
-                let current = (value >> mloc) & 0x1;
-                let mask = match (*mval, current) {
-                    ('1', 0) => 1 << mloc,
-                    ('0', 1) => 1 << mloc,
+    for fragment in program {
+        for &(memory_location, mut value) in fragment.cmds.iter() {
+            for &(mask_index, mask_char) in fragment.mask.iter() {
+                // get current bit
+                let current = (value >> mask_index) & 0x1;
+
+                // If they are different build a mask that flips it
+                let mask = match (mask_char, current) {
+                    ('1', 0) => 1 << mask_index,
+                    ('0', 1) => 1 << mask_index,
                     _ => continue,
                 };
 
                 value ^= mask;
             }
 
-            memory.insert(*location, value);
+            memory.insert(memory_location, value);
         }
     }
 
@@ -73,29 +81,28 @@ enum Bit {
     Floating,
 }
 
-fn int_to_bitarray(mut input: usize) -> [Bit; 36] {
+fn int_to_bitarray(mut num: usize) -> [Bit; 36] {
     let mut ans = [Bit::Zero; 36];
-    let mut i: usize = 35;
-    while input > 0 {
-        let bit = input & 0x1 > 0;
-        ans[i] = if bit { Bit::One } else { Bit::Zero };
-        i -= 1;
-        input >>= 1;
+
+    for ans_ptr in ans.iter_mut().rev() {
+        let bit = num & 0x1 > 0;
+        *ans_ptr = if bit { Bit::One } else { Bit::Zero };
+        num >>= 1;
     }
 
     ans
 }
 
 fn bitarray_to_int(array: [Bit; 36]) -> usize {
-    array.iter().fold(0, |num, bit| {
-        (num << 1) + if *bit == Bit::One { 1 } else { 0 }
+    array.iter().fold(0, |total, bit| {
+        (total << 1) + if *bit == Bit::One { 1 } else { 0 }
     })
 }
 
 fn permute(mut stack: Vec<[Bit; 36]>) -> Vec<[Bit; 36]> {
-    let mut ans = vec![];
-    while let Some(mut array) = stack.pop() {
-        let mut changed = false;
+    let mut ans = Vec::new();
+
+    'next: while let Some(mut array) = stack.pop() {
         for i in 0..36 {
             if array[i] == Bit::Floating {
                 array[i] = Bit::One;
@@ -104,43 +111,34 @@ fn permute(mut stack: Vec<[Bit; 36]>) -> Vec<[Bit; 36]> {
                 array[i] = Bit::Zero;
                 stack.push(array);
 
-                changed = true;
-                break;
+                continue 'next;
             }
         }
 
-        if !changed {
-            ans.push(array);
-        }
+        ans.push(array);
     }
 
     ans
 }
 
 #[aoc(day14, part2)]
-pub fn part2(group: &[Object]) -> usize {
+pub fn part2(program: &[ProgramFragment]) -> usize {
     let mut memory = HashMap::new();
 
-    for inputs in group {
-        for &(mem_location, value) in inputs.cmds.iter() {
-            let mut locations = vec![];
+    for fragment in program {
+        for &(memory_location, value) in fragment.cmds.iter() {
+            let mut bit_mem_loc = int_to_bitarray(memory_location);
 
-            let mut ml = int_to_bitarray(mem_location);
-
-            for (mask_l, mask_v) in inputs.mask.iter() {
-                if *mask_v == '0' {
-                    continue;
-                }
-                match *mask_v {
-                    '1' => ml[35 - *mask_l] = Bit::One,
+            for &(mask_index, mask_v) in fragment.mask.iter() {
+                match mask_v {
+                    '1' => bit_mem_loc[35 - mask_index] = Bit::One,
+                    'X' => bit_mem_loc[35 - mask_index] = Bit::Floating,
                     '0' => {}
-                    _ => ml[35 - *mask_l] = Bit::Floating,
+                    _ => unreachable!(),
                 }
             }
-            locations.push(ml);
 
-            locations = permute(locations);
-            for l in locations {
+            for l in permute(vec![bit_mem_loc]) {
                 memory.insert(bitarray_to_int(l), value);
             }
         }
