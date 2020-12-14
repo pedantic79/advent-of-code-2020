@@ -19,8 +19,7 @@ fn parse_group(group: &str) -> ProgramFragment {
     let mut line_iter = group.lines();
 
     // Discard everything left of the = on the first line, collect chars into array.
-    let mask = line_iter.next().unwrap().split('=').nth(1).unwrap().trim();
-    let mask = mask.chars().rev().collect();
+    let mask = BitNumber::from(line_iter.next().unwrap().split('=').nth(1).unwrap().trim());
 
     // Rest of input from group
     let cmds = line_iter
@@ -42,7 +41,7 @@ fn parse_group(group: &str) -> ProgramFragment {
                 cmd_iter.next().unwrap().trim().parse().unwrap(),
             )
         })
-        .collect::<Vec<(_, _)>>();
+        .collect();
 
     ProgramFragment { mask, cmds }
 }
@@ -59,8 +58,7 @@ pub fn part1(program: &[ProgramFragment]) -> usize {
 
                 // If they are different build a mask that flips it
                 let mask = match (mask_char, current) {
-                    (Bit::One, 0) => 1 << mask_index,
-                    (Bit::Zero, 1) => 1 << mask_index,
+                    (Bit::One, 0) | (Bit::Zero, 1) => 1 << mask_index,
                     _ => continue,
                 };
 
@@ -92,7 +90,7 @@ impl From<char> for Bit {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 struct BitNumber([Bit; 36]);
 
 impl BitNumber {
@@ -135,6 +133,12 @@ impl From<usize> for BitNumber {
     }
 }
 
+impl From<&str> for BitNumber {
+    fn from(s: &str) -> Self {
+        s.chars().collect()
+    }
+}
+
 impl From<BitNumber> for usize {
     fn from(array: BitNumber) -> Self {
         array.0.iter().fold(0, |total, bit| {
@@ -147,11 +151,32 @@ impl FromIterator<char> for BitNumber {
     fn from_iter<T: IntoIterator<Item = char>>(iter: T) -> Self {
         let mut ans = [Bit::Zero; 36];
 
-        for (bit, target) in iter.into_iter().map(|x| x.into()).zip(ans.iter_mut()) {
+        for (bit, target) in iter.into_iter().map(|x| x.into()).zip(ans.iter_mut().rev()) {
             *target = bit;
         }
 
         Self(ans)
+    }
+}
+
+impl std::fmt::Display for BitNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for d in self.0.iter().rev() {
+            let c = match d {
+                Bit::One => '1',
+                Bit::Zero => '0',
+                Bit::Floating => 'X',
+            };
+
+            write!(f, "{}", c)?;
+        }
+        Ok(())
+    }
+}
+
+impl std::fmt::Debug for BitNumber {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -184,15 +209,10 @@ pub fn part2(program: &[ProgramFragment]) -> usize {
 mod tests {
     use super::*;
 
-    const SAMPLE: &str = "mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
+    const SAMPLE1: &str = "mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
 mem[8] = 11
 mem[7] = 101
-mem[8] = 0
-mask = XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X
-mem[8] = 11
-mem[7] = 101
-mem[8] = 0
-";
+mem[8] = 0";
 
     const SAMPLE2: &str = "mask = 000000000000000000000000000000X1001X
 mem[42] = 100
@@ -201,14 +221,32 @@ mem[26] = 1";
 
     #[test]
     pub fn test_input() {
-        // println!("{:?}", generator(SAMPLE));
+        assert_eq!(
+            generator(SAMPLE1),
+            vec![ProgramFragment {
+                mask: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X".into(),
+                cmds: vec![(8, 11), (7, 101), (8, 0)],
+            }]
+        );
 
-        // assert_eq!(generator(SAMPLE), Object());
+        assert_eq!(
+            generator(SAMPLE2),
+            vec![
+                ProgramFragment {
+                    mask: "000000000000000000000000000000X1001X".into(),
+                    cmds: vec![(42, 100)],
+                },
+                ProgramFragment {
+                    mask: "00000000000000000000000000000000X0XX".into(),
+                    cmds: vec![(26, 1)],
+                }
+            ]
+        );
     }
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE)), 165);
+        assert_eq!(part1(&generator(SAMPLE1)), 165);
     }
 
     #[test]
