@@ -31,25 +31,26 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE)), 7);
+        // assert_eq!(part1(&generator(SAMPLE)), 7);
     }
 
-    // #[test]
-    // pub fn test2() {
-    //     assert_eq!(part2(&generator(SAMPLE)), 336);
-    // }
+    #[test]
+    pub fn test2() {
+        // assert_eq!(part2(&generator(SAMPLE)), 336);
+    }
 
-    // mod regression {
-    //     use super::*;
+    mod regression {
+        use super::*;
 
-    //     const INPUT: &str = include_str!("../input/2020/dayN.txt");
-    //     const ANSWERS: (usize, usize) = (0, 0);
+        const INPUT: &str = include_str!("../input/2020/dayN.txt");
+        const ANSWERS: (usize, usize) = (0, 0);
 
-    //     #[test]
-    //     pub fn test() {
-    //         let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-    //         assert_eq!(part1(&generator(input)), ANSWERS.0);
-    //         assert_eq!(part2(&generator(input)), ANSWERS.1);
-    //     }
-    // }
+        #[test]
+        pub fn test() {
+            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+
+            // assert_eq!(part1(&generator(input)), ANSWERS.0);
+            // assert_eq!(part2(&generator(input)), ANSWERS.1);
+        }
+    }
 }
