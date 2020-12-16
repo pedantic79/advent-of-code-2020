@@ -24,7 +24,7 @@ impl TicketRules {
         })
     }
 
-    fn column_valid(&self, tickets: &[&Vec<usize>], rule: usize, col: usize) -> bool {
+    fn validate_rule_col(&self, tickets: &[&Vec<usize>], rule: usize, col: usize) -> bool {
         let [one_l, one_r, two_l, two_r] = self.rules[rule];
 
         tickets
@@ -34,40 +34,46 @@ impl TicketRules {
     }
 }
 
+fn parse_rules(section: &str) -> (BTreeSet<usize>, Vec<[usize; 4]>) {
+    let mut important = BTreeSet::new();
+    let mut rules = vec![];
+
+    for (line_no, line) in section.lines().enumerate() {
+        let mut line = line.split(':');
+
+        if line.next().unwrap().starts_with("departure") {
+            important.insert(line_no);
+        }
+
+        let right = line.next().unwrap();
+        let mut row = [0; 4];
+
+        // This could be done collect if [T; 4] implemented FromIterator, but
+        // it doesn't.
+        for (entry, row_entry) in right
+            .split("or")
+            .flat_map(|or_split| {
+                or_split
+                    .trim()
+                    .split('-')
+                    .map(|x| x.parse::<usize>().unwrap())
+            })
+            .zip(row.iter_mut())
+        {
+            *row_entry = entry;
+        }
+
+        rules.push(row)
+    }
+
+    (important, rules)
+}
+
 #[aoc_generator(day16)]
 pub fn generator(input: &str) -> TicketRules {
     let mut section = input.split("\n\n");
 
-    // parse first section.
-    let mut important = BTreeSet::new();
-    let mut rules = vec![];
-    {
-        for (row, line) in section.next().unwrap().lines().enumerate() {
-            let mut line = line.split(':');
-
-            if line.next().unwrap().starts_with("departure") {
-                important.insert(row);
-            }
-
-            let right = line.next().unwrap();
-            let mut row = [0; 4];
-
-            for (i, entry) in right
-                .split("or")
-                .flat_map(|or_split| {
-                    or_split
-                        .trim()
-                        .split('-')
-                        .map(|x| x.parse::<usize>().unwrap())
-                })
-                .enumerate()
-            {
-                row[i] = entry;
-            }
-
-            rules.push(row)
-        }
-    };
+    let (important, rules) = parse_rules(section.next().unwrap());
 
     let ticket = section
         .next()
@@ -79,9 +85,7 @@ pub fn generator(input: &str) -> TicketRules {
         .map(|x| x.parse().unwrap())
         .collect();
 
-    let mut lines = section.next().unwrap().lines();
-    lines.next();
-
+    let lines = section.next().unwrap().lines().skip(1);
     let nearby = lines
         .map(|line| line.split(',').map(|x| x.parse().unwrap()).collect())
         .collect();
@@ -120,7 +124,7 @@ pub fn part2_solve(inputs: &TicketRules) -> Vec<(usize, usize)> {
 
     for (rule, cand) in candidates.iter_mut().enumerate() {
         for col in 0..rules_len {
-            if inputs.column_valid(tickets.as_slice(), rule, col) {
+            if inputs.validate_rule_col(tickets.as_slice(), rule, col) {
                 cand.insert(col);
             }
         }
@@ -129,7 +133,7 @@ pub fn part2_solve(inputs: &TicketRules) -> Vec<(usize, usize)> {
 
     while let Some((rule, column)) = candidates.iter().enumerate().find_map(|(p, x)| {
         if x.len() == 1 {
-            Some((p, x.iter().next().copied().unwrap()))
+            Some((p, *x.iter().next().unwrap()))
         } else {
             None
         }
