@@ -5,10 +5,11 @@ pub struct TicketRules {
     rules: Vec<[usize; 4]>,
     ticket: Vec<usize>,
     nearby: Vec<Vec<usize>>,
+    important: BTreeSet<usize>,
 }
 
 impl TicketRules {
-    fn validate(&self, ticket: &[usize]) -> Option<usize> {
+    fn find_invalid(&self, ticket: &[usize]) -> Option<usize> {
         ticket.iter().find_map(|field| {
             let f = self.rules.iter().any(|rule| {
                 let [one_l, one_r, two_l, two_r] = rule;
@@ -29,7 +30,7 @@ impl TicketRules {
         tickets
             .iter()
             .map(|ticket| ticket[col])
-            .all(|x| (one_l <= x && x <= one_r) || (two_l <= x && x <= two_r))
+            .all(|x| one_l <= x && x <= one_r || two_l <= x && x <= two_r)
     }
 }
 
@@ -38,13 +39,17 @@ pub fn generator(input: &str) -> TicketRules {
     let mut section = input.split("\n\n");
 
     // parse first section.
-
+    let mut important = BTreeSet::new();
     let mut rules = vec![];
     {
-        for line in section.next().unwrap().lines() {
+        for (row, line) in section.next().unwrap().lines().enumerate() {
             let mut line = line.split(':');
 
-            let right = line.nth(1).unwrap();
+            if line.next().unwrap().starts_with("departure") {
+                important.insert(row);
+            }
+
+            let right = line.next().unwrap();
             let mut row = [0; 4];
 
             for (i, entry) in right
@@ -85,6 +90,7 @@ pub fn generator(input: &str) -> TicketRules {
         rules,
         ticket,
         nearby,
+        important,
     }
 }
 
@@ -93,7 +99,7 @@ pub fn part1(inputs: &TicketRules) -> usize {
     inputs
         .nearby
         .iter()
-        .filter_map(|x| inputs.validate(x))
+        .filter_map(|x| inputs.find_invalid(x))
         .sum()
 }
 
@@ -102,14 +108,12 @@ pub fn part2(inputs: &TicketRules) -> usize {
     part2_solve(inputs).iter().map(|x| x.1).product()
 }
 
-pub fn part2_solve(inputs: &TicketRules) -> [(usize, usize); 6] {
+pub fn part2_solve(inputs: &TicketRules) -> Vec<(usize, usize)> {
     let tickets = inputs
         .nearby
         .iter()
-        .filter(|x| inputs.validate(x).is_none())
+        .filter(|x| inputs.find_invalid(x).is_none())
         .collect::<Vec<_>>();
-
-    // tickets.push(&inputs.ticket);
 
     let rules_len = inputs.rules.len();
     let mut candidates = vec![BTreeSet::new(); rules_len];
@@ -121,20 +125,21 @@ pub fn part2_solve(inputs: &TicketRules) -> [(usize, usize); 6] {
             }
         }
     }
-    let mut ans = [(0, 0); 6];
+    let mut ans = vec![(0, 0); inputs.important.len()];
 
-    while let Some((field, num)) = candidates
-        .iter()
-        .enumerate()
-        .find(|(_, x)| x.len() == 1)
-        .and_then(|(p, x)| x.iter().next().copied().map(|x| (p, x)))
-    {
+    while let Some((rule, column)) = candidates.iter().enumerate().find_map(|(p, x)| {
+        if x.len() == 1 {
+            Some((p, x.iter().next().copied().unwrap()))
+        } else {
+            None
+        }
+    }) {
         for cand in candidates.iter_mut() {
-            cand.remove(&num);
+            cand.remove(&column);
         }
 
-        if field < 6 {
-            ans[field] = (num, inputs.ticket[num]);
+        if inputs.important.contains(&rule) {
+            ans[rule] = (column, inputs.ticket[column]);
         }
     }
 
@@ -183,6 +188,7 @@ nearby tickets:
                     vec![55, 2, 20],
                     vec![38, 6, 12]
                 ],
+                important: BTreeSet::new()
             }
         );
     }
@@ -194,10 +200,10 @@ nearby tickets:
 
     #[test]
     pub fn test2() {
-        assert_eq!(
-            part2_solve(&generator(SAMPLE2)),
-            [(1, 12), (0, 11), (2, 13), (0, 0), (0, 0), (0, 0)]
-        );
+        let mut rules = generator(SAMPLE2);
+        rules.important = (0..=2usize).collect();
+
+        assert_eq!(part2_solve(&rules), vec![(1, 12), (0, 11), (2, 13)]);
     }
 
     mod regression {
