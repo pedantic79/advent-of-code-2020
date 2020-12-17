@@ -1,30 +1,36 @@
 use std::collections::{HashMap, HashSet};
 
-fn neighbors(n: usize) -> Vec<Vec<i64>> {
-    fn helper(ans: &mut Vec<Vec<i64>>, v: &mut Vec<i64>, n: usize) {
+pub struct Point2D(i32, i32);
+
+#[derive(PartialEq, Eq, Hash)]
+pub struct CoordN(Vec<i32>);
+
+fn neighbors(n: usize) -> Vec<Vec<i32>> {
+    fn helper(answer: &mut Vec<Vec<i32>>, current: &mut Vec<i32>, n: usize) {
         if n == 0 {
-            ans.push(v.clone());
+            answer.push(current.clone());
             return;
         }
 
         for i in -1..=1 {
-            v.push(i);
-            helper(ans, v, n - 1);
-            v.pop();
+            current.push(i);
+            helper(answer, current, n - 1);
+            current.pop();
         }
     }
 
     let mut ans = vec![];
-    helper(&mut ans, &mut vec![], n);
+    helper(&mut ans, &mut Vec::with_capacity(n), n);
     ans
 }
 
-pub fn tick(state: HashSet<Vec<i64>>) -> HashSet<Vec<i64>> {
+fn tick(state: HashSet<CoordN>) -> HashSet<CoordN> {
     let mut counts = HashMap::new();
-    for point in state.iter() {
-        for mut neighbor in neighbors(point.len()) {
-            for (n, p) in neighbor.iter_mut().zip(point.iter()) {
-                *n += p;
+
+    for coord in state.iter() {
+        for mut neighbor in neighbors(coord.0.len()) {
+            for (n, c) in neighbor.iter_mut().zip(coord.0.iter()) {
+                *n += c
             }
 
             *counts.entry(neighbor).or_insert(0) += 1;
@@ -33,9 +39,12 @@ pub fn tick(state: HashSet<Vec<i64>>) -> HashSet<Vec<i64>> {
 
     counts
         .into_iter()
-        .filter_map(|(point, count)| {
-            if count == 3 || count == 4 && state.contains(&point) {
-                Some(point)
+        .filter_map(|(coord, count)| {
+            let current = CoordN(coord);
+
+            // one more because we're including ourself
+            if count == 3 || count == 4 && state.contains(&current) {
+                Some(current)
             } else {
                 None
             }
@@ -43,47 +52,48 @@ pub fn tick(state: HashSet<Vec<i64>>) -> HashSet<Vec<i64>> {
         .collect()
 }
 
-#[aoc_generator(day17)]
-pub fn generator(input: &str) -> HashSet<(i64, i64)> {
-    input
-        .lines()
-        .enumerate()
-        .flat_map(|(y, line)| {
-            line.chars()
-                .enumerate()
-                .filter(|(_, c)| *c == '#')
-                .map(move |(x, _)| (y as i64, x as i64))
-        })
-        .collect()
-}
-
-pub fn solve(cs: &HashSet<(i64, i64)>, extra_dim: bool) -> usize {
-    let mut state = cs
+fn solve(points: &[Point2D], dimensions: usize) -> usize {
+    let mut state = points
         .iter()
-        .map(|&(x, y)| {
-            let mut p = vec![x, y, 0];
-            if extra_dim {
-                p.push(0);
-            }
-            p
+        .map(|&Point2D(y, x)| {
+            let mut point = vec![y, x];
+            point.resize(dimensions, 0);
+            CoordN(point)
         })
-        .collect::<HashSet<_>>();
+        .collect();
 
     for _ in 0..6 {
-        state = tick(state)
+        state = tick(state);
     }
 
     state.len()
 }
 
+#[aoc_generator(day17)]
+pub fn generator(input: &str) -> Vec<Point2D> {
+    input
+        .lines()
+        .enumerate()
+        .flat_map(|(y, line)| {
+            line.chars().enumerate().filter_map(move |(x, c)| {
+                if c == '#' {
+                    Some(Point2D(y as i32, x as i32))
+                } else {
+                    None
+                }
+            })
+        })
+        .collect()
+}
+
 #[aoc(day17, part1)]
-pub fn part1(cs: &HashSet<(i64, i64)>) -> usize {
-    solve(cs, false)
+pub fn part1(input: &[Point2D]) -> usize {
+    solve(input, 3)
 }
 
 #[aoc(day17, part2)]
-pub fn part2(cs: &HashSet<(i64, i64)>) -> usize {
-    solve(cs, true)
+pub fn part2(cs: &[Point2D]) -> usize {
+    solve(cs, 4)
 }
 
 #[cfg(test)]
