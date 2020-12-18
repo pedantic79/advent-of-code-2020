@@ -1,31 +1,36 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    iter::from_fn,
+};
 
 pub struct Point2D(i32, i32);
 
 #[derive(PartialEq, Eq, Hash)]
 pub struct CoordN(Vec<i32>);
 
-fn neighbors(n: usize) -> Vec<Vec<i32>> {
-    fn helper(answer: &mut Vec<Vec<i32>>, current: &mut Vec<i32>, n: usize) {
-        if n == 0 {
-            answer.push(current.clone());
-            return;
+fn neighbors(n: usize) -> impl Iterator<Item = Vec<i32>> {
+    let mut stack = Vec::with_capacity(3usize.pow(n as u32));
+    stack.push(Vec::new());
+
+    from_fn(move || {
+        while let Some(mut current) = stack.pop() {
+            if current.len() == n {
+                return Some(current);
+            }
+
+            for i in -1..=1 {
+                current.push(i);
+                stack.push(current.clone());
+                current.pop();
+            }
         }
 
-        for i in -1..=1 {
-            current.push(i);
-            helper(answer, current, n - 1);
-            current.pop();
-        }
-    }
-
-    let mut ans = vec![];
-    helper(&mut ans, &mut Vec::with_capacity(n), n);
-    ans
+        None
+    })
 }
 
 fn tick(state: HashSet<CoordN>) -> HashSet<CoordN> {
-    let mut counts = HashMap::new();
+    let mut counts = HashMap::with_capacity(state.iter().next().unwrap().0.len());
 
     for coord in state.iter() {
         for mut neighbor in neighbors(coord.0.len()) {
