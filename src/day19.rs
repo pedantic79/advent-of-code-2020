@@ -12,9 +12,42 @@ pub struct Input {
     messages: Vec<Vec<char>>,
 }
 
+fn starts_with(s: &[char], c: char) -> Option<&[char]> {
+    if let Some(x) = s.get(0) {
+        if *x == c {
+            return Some(&s[1..]);
+        }
+    }
+    None
+}
+
 impl Input {
-    fn check(&self, message: &[char]) -> bool {
-        self.check_message(0, message, 0)
+    fn solve_other<'a>(&'a self, message: &'a [char], rule: &[usize]) -> Vec<&'a [char]> {
+        rule.iter().fold(vec![message], |acc, rule| {
+            acc.iter()
+                .flat_map(|message| self.solve(message, *rule))
+                .collect()
+        })
+    }
+
+    fn solve<'a>(&'a self, message: &'a [char], rule: usize) -> Vec<&'a [char]> {
+        if message.is_empty() {
+            return Vec::new();
+        }
+
+        match &self.rules[&rule] {
+            Rule::Char(c) => starts_with(message, *c)
+                .map(|m| vec![m])
+                .unwrap_or_else(Vec::new),
+            Rule::Subrule(v) => v
+                .iter()
+                .flat_map(|rule| self.solve_other(message, rule))
+                .collect(),
+        }
+    }
+
+    fn check(&self, message: &[char], rule_no: usize) -> bool {
+        self.check_message(rule_no, message, 0)
             .map_or(false, |length| length == message.len())
     }
 
@@ -67,14 +100,18 @@ impl Input {
                                         result = Some(count);
                                     }
                                 } else {
-                                    println!("{}Breaking sub_check", indent);
+                                    println!("{}Breaking sub_check ", indent,);
                                     result = None;
                                     break;
                                 }
                             } else {
                                 println!(
-                                    "{}Breaking empty mess, rule_no: {}, {:?}[{}]",
-                                    indent, irl_no, individual_rule_list, num
+                                    "{}Breaking empty mess, rule_no: {}, {:?}[{}] for {}",
+                                    indent,
+                                    irl_no,
+                                    individual_rule_list,
+                                    num,
+                                    mess.iter().collect::<String>(),
                                 );
 
                                 result = None;
@@ -85,14 +122,24 @@ impl Input {
 
                     if result.is_some() {
                         println!(
-                            "{}Returning {:?} for {:?}",
-                            indent, result, individual_rule_list
+                            "{}Returning {:?} for {:?} (rule_no: {}) for {}",
+                            indent,
+                            result,
+                            individual_rule_list,
+                            rule_no,
+                            message.iter().collect::<String>(),
                         );
                         return result;
                     }
                 }
 
-                println!("{}Returning None... for {:?} ", indent, v);
+                println!(
+                    "{}Returning None... for {:?} (rule_no: {}) for {}",
+                    indent,
+                    v,
+                    rule_no,
+                    message.iter().collect::<String>(),
+                );
 
                 None
             }
@@ -143,7 +190,7 @@ pub fn part1(inputs: &Input) -> usize {
     inputs
         .messages
         .iter()
-        .filter(|message| inputs.check(message))
+        .filter(|message| inputs.solve(message, 0).iter().any(|v| v.is_empty()))
         .count()
 }
 
@@ -160,7 +207,7 @@ pub fn part2(inputs: &Input) -> usize {
     inputs
         .messages
         .iter()
-        .filter(|message| inputs.check(message))
+        .filter(|message| inputs.solve(message, 0).iter().any(|v| v.is_empty()))
         .count()
 }
 
@@ -181,10 +228,6 @@ abbbab
 aaabbb
 aaaabbb"#;
 
-    // babbbbaabbbbbabbbbbbaabaaabaaa
-
-    // 18: 15 15
-    // 11: 42 31
     const SAMPLE2: &str = r#"0: 8 11
 1: "a"
 2: 1 24 | 14 4
@@ -196,7 +239,7 @@ aaaabbb"#;
 8: 42 | 42 8
 9: 14 27 | 1 26
 10: 23 14 | 28 1
-11: 42 31 | 42 11 31
+11: 42 31 | 2 11 31
 12: 24 14 | 19 1
 13: 14 3 | 1 12
 14: "b"
@@ -241,7 +284,6 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
     }
 
     #[test]
-    #[ignore]
     pub fn test1() {
         assert_eq!(part1(&generator(SAMPLE)), 2);
     }
@@ -257,17 +299,11 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
             .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
 
         println!();
-        // assert_eq!(
-        //     inputs
-        //         .messages
-        //         .iter()
-        //         .filter(|message| inputs.check(message))
-        //         .count(),
-        //     3,
-        // );
-        assert!(inputs.check(&"babbbbaabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>()));
 
-        // assert_eq!(part2(&inputs), 12);
+        // dbg!(inputs.check(&"babbbbaabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>()));
+        dbg!(inputs.check(&"baabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>(), 11));
+
+        assert_eq!(part2(&inputs), 12);
     }
 
     mod regression {
@@ -281,7 +317,7 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
 
             assert_eq!(part1(&generator(input)), ANSWERS.0);
-            // assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part2(&generator(input)), ANSWERS.1);
         }
     }
 }
