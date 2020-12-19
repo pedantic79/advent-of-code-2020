@@ -52,17 +52,22 @@ impl Input {
     }
 
     fn check_sub(&self, message: &[char], rules: &[usize]) -> Option<usize> {
-        let mut count = 0;
+        // let mut count = 0;
 
-        for rule in rules {
-            if let Some(c) = self.check_message(&message[count..], *rule) {
-                count += c;
-            } else {
-                return None;
-            }
-        }
+        // for rule in rules {
+        //     if let Some(c) = self.check_message(&message[count..], *rule) {
+        //         count += c;
+        //     } else {
+        //         return None;
+        //     }
+        // }
 
-        Some(count)
+        // Some(count)
+
+        rules.iter().try_fold(0, |count, rule| {
+            self.check_message(&message[count..], *rule)
+                .map(|n| count + n)
+        })
     }
 
     fn check_message(&self, message: &[char], rule_no: usize) -> Option<usize> {
