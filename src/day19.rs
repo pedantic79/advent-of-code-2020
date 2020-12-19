@@ -9,20 +9,19 @@ enum Rule {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Input {
     rules: HashMap<usize, Rule>,
-    messages: Vec<Vec<char>>,
+    messages: Vec<String>,
 }
 
-fn starts_with(s: &[char], c: char) -> Option<&[char]> {
-    if let Some(x) = s.get(0) {
-        if *x == c {
-            return Some(&s[1..]);
-        }
+fn starts_with(s: &str, c: char) -> Option<&str> {
+    if s.starts_with(c) {
+        Some(&s[1..])
+    } else {
+        None
     }
-    None
 }
 
 impl Input {
-    fn solve_other<'a>(&'a self, message: &'a [char], rule: &[usize]) -> Vec<&'a [char]> {
+    fn solve_other<'a>(&'a self, message: &'a str, rule: &[usize]) -> Vec<&'a str> {
         rule.iter().fold(vec![message], |acc, rule| {
             acc.iter()
                 .flat_map(|message| self.solve(message, *rule))
@@ -30,7 +29,7 @@ impl Input {
         })
     }
 
-    fn solve<'a>(&'a self, message: &'a [char], rule: usize) -> Vec<&'a [char]> {
+    fn solve<'a>(&'a self, message: &'a str, rule: usize) -> Vec<&'a str> {
         if message.is_empty() {
             return Vec::new();
         }
@@ -46,58 +45,90 @@ impl Input {
         }
     }
 
-    fn check(&self, message: &[char], rule_no: usize) -> bool {
+    fn check(&self, message: &str, rule_no: usize) -> bool {
         self.check_message(message, rule_no)
-            .map_or(false, |length| length == message.len())
+            .iter()
+            .any(|x| x.is_empty())
+
+        // .map_or(false, |length| length == message.len())
     }
 
-    fn check_sub(&self, message: &[char], rules: &[usize]) -> Option<usize> {
+    fn check_sub<'a>(&self, message: &'a str, rules: &[usize]) -> Vec<&'a str> {
         // let mut count = 0;
+        // let mut message = message;
+        let mut acc = vec![message];
 
-        // for rule in rules {
-        //     if let Some(c) = self.check_message(&message[count..], *rule) {
-        //         count += c;
-        //     } else {
-        //         return None;
-        //     }
-        // }
+        for rule in rules {
+            // if let Some(c) = self.check_message(&message[count..], *rule) {
+            //     count += c;
+            // } else {
+            //     return None;
+            // }
 
-        // Some(count)
+            let new_m = acc
+                .iter()
+                .flat_map(|message| self.check_message(message, *rule))
+                .collect();
+            acc = new_m;
+        }
 
-        rules.iter().try_fold(0, |count, rule| {
-            self.check_message(&message[count..], *rule)
-                .map(|n| count + n)
-        })
+        acc
+        // rules.iter().try_fold(0, |count, rule| {
+        //     self.check_message(&message[count..], *rule)
+        //         .map(|n| count + n)
+        // })
     }
 
-    fn check_message(&self, message: &[char], rule_no: usize) -> Option<usize> {
+    fn check_message<'a>(&self, message: &'a str, rule_no: usize) -> Vec<&'a str> {
         if message.is_empty() {
-            return Some(0);
+            return vec![];
         }
 
         match &self.rules.get(&rule_no) {
-            None => None,
+            None => vec![],
             Some(Rule::Char(c)) => {
-                if Some(c) == message.iter().next() {
-                    Some(1)
+                if Some(*c) == message.chars().next() {
+                    vec![&message[1..]]
                 } else {
-                    None
+                    vec![]
                 }
             }
             Some(Rule::Subrule(v)) => {
                 let ans = v
                     .iter()
-                    .map(|irl| self.check_sub(message, irl))
+                    .flat_map(|irl| self.check_sub(message, irl))
                     .collect::<Vec<_>>();
-                let f = ans.iter().find(|x| x.is_some());
 
-                match f {
-                    Some(Some(n)) => Some(*n),
-                    Some(None) => {
-                        panic!("This should't happen Some(None)");
-                    }
-                    None => None,
-                }
+                assert!(
+                    ans.iter().filter(|x| !x.is_empty()).count() < 3,
+                    "{:?}, {}",
+                    ans,
+                    message
+                );
+
+                // assert!(
+                //     ans.iter().filter(|x| x.is_some()).count() < 2,
+                //     "{:?}, {}",
+                //     ans,
+                //     message
+                // );
+                // let f = ans.iter().find(|x| {
+                //     if let Some(n) = x {
+                //         *n <= message.len()
+                //     } else {
+                //         false
+                //     }
+                // });
+
+                // match f {
+                //     Some(Some(n)) => Some(*n),
+                //     Some(None) => {
+                //         panic!("This should't happen Some(None)");
+                //     }
+                //     None => None,
+                // }
+
+                ans
             }
         }
     }
@@ -126,7 +157,7 @@ fn parse_rules(input: &str) -> HashMap<usize, Rule> {
     input.lines().map(|line| parse_rule_line(line)).collect()
 }
 
-fn parse_messages(input: &str) -> Vec<Vec<char>> {
+fn parse_messages(input: &str) -> Vec<String> {
     input.lines().map(|x| x.chars().collect()).collect()
 }
 
@@ -189,7 +220,7 @@ pub fn part2_orig(inputs: &Input) -> usize {
     inputs
         .messages
         .iter()
-        .filter(|message| inputs.solve(message, 0).iter().any(|v| v.is_empty()))
+        .filter(|message| inputs.check(message, 0))
         .count()
 }
 
