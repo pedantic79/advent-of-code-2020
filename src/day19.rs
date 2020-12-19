@@ -47,101 +47,52 @@ impl Input {
     }
 
     fn check(&self, message: &[char], rule_no: usize) -> bool {
-        self.check_message(rule_no, message, 0)
+        self.check_message(message, rule_no)
             .map_or(false, |length| length == message.len())
     }
 
-    fn check_message(&self, rule_no: usize, message: &[char], depth: usize) -> Option<usize> {
-        let indent = std::iter::repeat('\t').take(depth).collect::<String>();
+    fn check_sub(&self, message: &[char], rules: &[usize]) -> Option<usize> {
+        let mut count = 0;
+
+        for rule in rules {
+            if let Some(c) = self.check_message(&message[count..], *rule) {
+                count += c;
+            } else {
+                return None;
+            }
+        }
+
+        Some(count)
+    }
+
+    fn check_message(&self, message: &[char], rule_no: usize) -> Option<usize> {
+        if message.is_empty() {
+            return Some(0);
+        }
 
         match &self.rules.get(&rule_no) {
             None => None,
             Some(Rule::Char(c)) => {
-                println!(
-                    "{}Checking {:?} == {:?}",
-                    indent,
-                    Some(c),
-                    message.iter().next()
-                );
                 if Some(c) == message.iter().next() {
-                    println!("{}Returning Some(1)", indent);
                     Some(1)
                 } else {
-                    println!("{}Returning None", indent);
                     None
                 }
             }
             Some(Rule::Subrule(v)) => {
-                for individual_rule_list in v.iter() {
-                    let mut result = None;
-                    let mut count = 0;
+                let ans = v
+                    .iter()
+                    .map(|irl| self.check_sub(message, irl))
+                    .collect::<Vec<_>>();
+                let f = ans.iter().find(|x| x.is_some());
 
-                    {
-                        let mut mess = message;
-
-                        println!(
-                            "{}Checking [{}] against {:?}",
-                            indent,
-                            mess.iter().collect::<String>(),
-                            individual_rule_list
-                        );
-                        for (num, irl_no) in individual_rule_list.iter().enumerate() {
-                            if !mess.is_empty() {
-                                println!(
-                                    "{}Checking rule: {} in  {:?}",
-                                    indent, irl_no, individual_rule_list
-                                );
-                                if let Some(matched) = self.check_message(*irl_no, mess, depth + 1)
-                                {
-                                    mess = &mess[matched..];
-                                    count += matched;
-
-                                    if num == individual_rule_list.len() - 1 {
-                                        result = Some(count);
-                                    }
-                                } else {
-                                    println!("{}Breaking sub_check ", indent,);
-                                    result = None;
-                                    break;
-                                }
-                            } else {
-                                println!(
-                                    "{}Breaking empty mess, rule_no: {}, {:?}[{}] for {}",
-                                    indent,
-                                    irl_no,
-                                    individual_rule_list,
-                                    num,
-                                    mess.iter().collect::<String>(),
-                                );
-
-                                result = None;
-                                break;
-                            }
-                        }
-                    };
-
-                    if result.is_some() {
-                        println!(
-                            "{}Returning {:?} for {:?} (rule_no: {}) for {}",
-                            indent,
-                            result,
-                            individual_rule_list,
-                            rule_no,
-                            message.iter().collect::<String>(),
-                        );
-                        return result;
+                match f {
+                    Some(Some(n)) => Some(*n),
+                    Some(None) => {
+                        panic!("This should't happen Some(None)");
                     }
+                    None => None,
                 }
-
-                println!(
-                    "{}Returning None... for {:?} (rule_no: {}) for {}",
-                    indent,
-                    v,
-                    rule_no,
-                    message.iter().collect::<String>(),
-                );
-
-                None
             }
         }
     }
@@ -194,8 +145,34 @@ pub fn part1(inputs: &Input) -> usize {
         .count()
 }
 
+#[aoc(day19, part1, orig)]
+pub fn part1_orig(inputs: &Input) -> usize {
+    inputs
+        .messages
+        .iter()
+        .filter(|x| inputs.check(x, 0))
+        .count()
+}
+
 #[aoc(day19, part2)]
 pub fn part2(inputs: &Input) -> usize {
+    let mut inputs = inputs.clone();
+    inputs
+        .rules
+        .insert(8, Rule::Subrule(vec![vec![42], vec![42, 8]]));
+    inputs
+        .rules
+        .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
+
+    inputs
+        .messages
+        .iter()
+        .filter(|message| inputs.solve(message, 0).iter().any(|v| v.is_empty()))
+        .count()
+}
+
+#[aoc(day19, part2, orig)]
+pub fn part2_orig(inputs: &Input) -> usize {
     let mut inputs = inputs.clone();
     inputs
         .rules
@@ -227,6 +204,8 @@ bababa
 abbbab
 aaabbb
 aaaabbb"#;
+
+    // baabbbbbabbbbbbaabaaabaaa
 
     const SAMPLE2: &str = r#"0: 8 11
 1: "a"
@@ -298,10 +277,10 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
             .rules
             .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
 
-        println!();
+        // println!();
 
         // dbg!(inputs.check(&"babbbbaabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>()));
-        dbg!(inputs.check(&"baabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>(), 11));
+        // dbg!(inputs.check_message(&"baabbbbbabbbbbbaabaaabaaa".chars().collect::<Vec<_>>(), 11,));
 
         assert_eq!(part2(&inputs), 12);
     }
