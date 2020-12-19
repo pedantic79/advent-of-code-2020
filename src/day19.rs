@@ -49,22 +49,12 @@ impl Input {
         self.check_message(message, rule_no)
             .iter()
             .any(|x| x.is_empty())
-
-        // .map_or(false, |length| length == message.len())
     }
 
     fn check_sub<'a>(&self, message: &'a str, rules: &[usize]) -> Vec<&'a str> {
-        // let mut count = 0;
-        // let mut message = message;
         let mut acc = vec![message];
 
         for rule in rules {
-            // if let Some(c) = self.check_message(&message[count..], *rule) {
-            //     count += c;
-            // } else {
-            //     return None;
-            // }
-
             let new_m = acc
                 .iter()
                 .flat_map(|message| self.check_message(message, *rule))
@@ -73,10 +63,6 @@ impl Input {
         }
 
         acc
-        // rules.iter().try_fold(0, |count, rule| {
-        //     self.check_message(&message[count..], *rule)
-        //         .map(|n| count + n)
-        // })
     }
 
     fn check_message<'a>(&self, message: &'a str, rule_no: usize) -> Vec<&'a str> {
@@ -87,8 +73,8 @@ impl Input {
         match &self.rules.get(&rule_no) {
             None => vec![],
             Some(Rule::Char(c)) => {
-                if Some(*c) == message.chars().next() {
-                    vec![&message[1..]]
+                if let Some(rest) = starts_with(message, *c) {
+                    vec![rest]
                 } else {
                     vec![]
                 }
@@ -105,28 +91,6 @@ impl Input {
                     ans,
                     message
                 );
-
-                // assert!(
-                //     ans.iter().filter(|x| x.is_some()).count() < 2,
-                //     "{:?}, {}",
-                //     ans,
-                //     message
-                // );
-                // let f = ans.iter().find(|x| {
-                //     if let Some(n) = x {
-                //         *n <= message.len()
-                //     } else {
-                //         false
-                //     }
-                // });
-
-                // match f {
-                //     Some(Some(n)) => Some(*n),
-                //     Some(None) => {
-                //         panic!("This should't happen Some(None)");
-                //     }
-                //     None => None,
-                // }
 
                 ans
             }
