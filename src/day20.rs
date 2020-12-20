@@ -1,5 +1,3 @@
-#![warn(rust_2018_idioms)]
-
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -34,10 +32,40 @@ impl Dir {
     }
 }
 
+fn rotate_right<T, A>(a: &mut [A])
+where
+    T: Default + Copy,
+    A: AsMut<[T]>,
+{
+    let len = a.len();
+    for i in 0..(len / 2) {
+        for j in i..(len - i - 1) {
+            let temp = a[i].as_mut()[j];
+            a[i].as_mut()[j] = a[len - 1 - j].as_mut()[i];
+            a[len - 1 - j].as_mut()[i] = a[len - 1 - i].as_mut()[len - 1 - j];
+            a[len - 1 - i].as_mut()[len - 1 - j] = a[j].as_mut()[len - 1 - i];
+            a[j].as_mut()[len - 1 - i] = temp;
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Tile {
     id: usize,
     data: Vec<Vec<u16>>,
+}
+
+fn complement(mut edge: u16) -> u16 {
+    let mut data = [0; 10];
+    let mut i = 0;
+
+    while edge > 0 {
+        data[i] = edge & 1;
+        edge >>= 1;
+        i += 1;
+    }
+
+    data.iter().rev().fold(0, |acc, n| acc * 2 + n)
 }
 
 impl Tile {
@@ -47,8 +75,8 @@ impl Tile {
 
     fn edges(&self) -> ([u16; 4], [u16; 4]) {
         fn array2int(data: &[u16]) -> (u16, u16) {
-            let reverse = data.iter().rev().fold(0, |acc, n| acc * 2 + n);
             let forward = data.iter().fold(0, |acc, n| acc * 2 + n);
+            let reverse = data.iter().rev().fold(0, |acc, n| acc * 2 + n);
 
             (forward, reverse)
         }
@@ -71,52 +99,98 @@ impl Tile {
                 .collect::<Vec<_>>(),
         );
 
-        ([a1, d1, b2, c2], [a2, d2, b1, c1])
+        // ([a1, d1, b2, c2], [c1, b1, d2, a2])
+        // ([a1, d1, b2, c2], [a2, d2, b1, c1])
+        ([a1, d1, b1, c1], [a2, d2, b2, c2])
     }
 
-    fn rotate(&self, edge: u16, direction: Dir, flipped: bool) -> ModifiedTile<'_> {
-        let edges = {
-            let e = self.edges();
-            if flipped {
-                e.1
-            } else {
-                e.0
-            }
-        };
-
-        assert!(edges.contains(&edge));
+    fn rotate(&self, edge: u16, direction: Dir) -> ModifiedTile<'_> {
         let mut d = 0;
-        while edges[d % 4] != edge {
-            d += 1;
-        }
 
-        ModifiedTile {
-            flipped,
-            direction: (direction.value() + d).into(),
-            id: self.id,
-            tile: Some(&self),
+        loop {
+            for &flipped in &[false, true] {
+                let mt = ModifiedTile {
+                    flipped,
+                    direction: d.into(),
+                    tile: &self,
+                };
+
+                if mt.edges().0[direction.value()] == edge {
+                    return mt;
+                }
+            }
+
+            d += 1;
+            if d > 4 {
+                panic!("invalid combo to rotate")
+            }
         }
     }
 }
 
-#[derive(Default, Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 struct ModifiedTile<'a> {
     flipped: bool,
     direction: Dir,
-    id: usize,
-    tile: Option<&'a Tile>,
+    tile: &'a Tile,
 }
 
 impl<'a> ModifiedTile<'a> {
     fn edges(&self) -> ([u16; 4], [u16; 4]) {
-        let (mut a, mut b) = self.tile.unwrap().edges();
-        a.rotate_right(self.direction.value());
-        b.rotate_right(self.direction.value());
+        let (mut a, mut b) = self.tile.edges();
 
-        if self.flipped {
-            (b, a)
+        if !self.flipped {
+            a.rotate_right(self.direction.value());
+            b.rotate_right(self.direction.value());
+
+            match self.direction {
+                Dir::Top => (a, b),
+                Dir::Right => {
+                    std::mem::swap(&mut a[0], &mut b[0]);
+                    std::mem::swap(&mut a[2], &mut b[2]);
+                    (a, b)
+                }
+                Dir::Bottom => (b, a),
+                Dir::Left => {
+                    std::mem::swap(&mut a[0], &mut b[0]);
+                    std::mem::swap(&mut a[2], &mut b[2]);
+                    (b, a)
+                }
+            }
         } else {
-            (a, b)
+            a.rotate_left(self.direction.value());
+            b.rotate_left(self.direction.value());
+
+            match self.direction {
+                Dir::Top => {
+                    std::mem::swap(&mut a[1], &mut b[3]);
+                    std::mem::swap(&mut b[1], &mut a[3]);
+                    (b, a)
+                }
+                Dir::Right => {
+                    a.swap(1, 3);
+                    b.swap(1, 3);
+                    (b, a)
+                }
+                Dir::Bottom => {
+                    std::mem::swap(&mut a[1], &mut b[3]);
+                    std::mem::swap(&mut b[1], &mut a[3]);
+                    (a, b)
+                }
+                Dir::Left => {
+                    a.swap(1, 3);
+                    b.swap(1, 3);
+                    (a, b)
+                }
+            }
+        }
+    }
+
+    fn dir(&self, dir: Dir) -> Dir {
+        match (self.flipped, dir) {
+            (true, Dir::Left) => Dir::Right,
+            (true, Dir::Right) => Dir::Left,
+            _ => dir,
         }
     }
 }
@@ -125,7 +199,7 @@ struct TileCache<'a> {
     id2tile: HashMap<usize, &'a Tile>,
     edge2tile: HashMap<u16, Vec<&'a Tile>>,
     edge2id: HashMap<u16, Vec<usize>>,
-    tiles_one_edge: HashMap<usize, usize>,
+    unique_tile_edge_count: HashMap<usize, usize>,
 }
 
 impl<'a> TileCache<'a> {
@@ -148,21 +222,54 @@ impl<'a> TileCache<'a> {
             }
         }
 
-        let tiles_one_edge = edge2id
-            .iter()
-            .fold(HashMap::new(), |mut hm, (_edge_id, tileids)| {
-                if tileids.len() == 1 {
-                    *hm.entry(tileids[0]).or_insert(0_usize) += 1;
-                }
-                hm
-            });
+        // maps tileid to unique_edges
+        let unique_tile_edge_count =
+            edge2id
+                .iter()
+                .fold(HashMap::new(), |mut hm, (_edge_id, tileids)| {
+                    if tileids.len() == 1 {
+                        *hm.entry(tileids[0]).or_insert(0_usize) += 1;
+                    }
+                    hm
+                });
 
         Self {
             id2tile,
             edge2tile,
             edge2id,
-            tiles_one_edge,
+            unique_tile_edge_count,
         }
+    }
+
+    // Orient tile so top and left corners are unique
+    fn orient_first_tile(&self, tile_id: usize) -> ModifiedTile<'a> {
+        let tile = self.id2tile[&tile_id];
+
+        for &flipped in &[true, false] {
+            for &direction in [Dir::Top, Dir::Right, Dir::Bottom, Dir::Left].iter().rev() {
+                let mtile = ModifiedTile {
+                    flipped,
+                    direction,
+                    tile,
+                };
+
+                if mtile
+                    .edges()
+                    .0
+                    .iter()
+                    .map(|edge| (self.get_edge_count_by_edge_id(*edge)))
+                    .eq([1, 2, 2, 1].iter().copied())
+                {
+                    return mtile;
+                }
+            }
+        }
+
+        unreachable!()
+    }
+
+    fn get_edge_count_by_edge_id(&self, edge_id: u16) -> usize {
+        self.edge2id[&edge_id].len()
     }
 }
 
@@ -193,13 +300,13 @@ pub fn generator(input: &str) -> Vec<Tile> {
 
 fn solve1(cache: &TileCache) -> (Vec<usize>, Vec<usize>) {
     let corners: Vec<usize> = cache
-        .tiles_one_edge
+        .unique_tile_edge_count
         .iter()
         .filter_map(|(id, c)| if *c > 2 { Some(*id) } else { None })
         .collect();
 
     let sides = cache
-        .tiles_one_edge
+        .unique_tile_edge_count
         .iter()
         .filter_map(|(id, c)| if *c <= 2 { Some(*id) } else { None })
         .collect();
@@ -220,14 +327,40 @@ pub fn part2(tiles: &[Tile]) -> usize {
     let (corners, sides) = solve1(&cache);
     let l = if tiles.len() == 144 { 12 } else { 3 }; // Cheating, you can use sqrt
 
-    let mut mosiac = vec![vec![ModifiedTile::default(); l]; l];
-    mosiac[0][0].id = corners[0];
+    let mut mosiac: Vec<Vec<Option<ModifiedTile>>> = vec![vec![None; l]; l];
 
-    println!("Edges {:?}", cache.id2tile[&corners[0]].edges());
+    for row in 0..l {
+        let mut last_mt;
 
-    for side in sides {
-        println!("{}: {:?}", side, cache.id2tile[&side].edges());
+        if row == 0 {
+            last_mt = cache.orient_first_tile(corners[0]);
+        } else {
+            last_mt = mosiac[row - 1][0].clone().unwrap();
+            let target_top_edge = last_mt.edges().0[Dir::Bottom.value()];
+            let next = cache.edge2tile[&target_top_edge]
+                .iter()
+                .find(|tile| tile.id != last_mt.tile.id)
+                .copied()
+                .unwrap();
+
+            last_mt = next.rotate(target_top_edge, Dir::Top);
+        }
+        mosiac[row][0] = Some(last_mt.clone());
+
+        for target in mosiac[row].iter_mut().skip(1) {
+            let target_left_edge = last_mt.edges().0[Dir::Right.value()];
+            let next = cache.edge2tile[&target_left_edge]
+                .iter()
+                .find(|tile| tile.id != last_mt.tile.id)
+                .copied()
+                .unwrap();
+
+            last_mt = next.rotate(target_left_edge, Dir::Left);
+            *target = Some(last_mt.clone());
+        }
     }
+
+    println!("{:?}", mosiac);
 
     0
 }
@@ -246,11 +379,11 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    // #[ignore]
     pub fn test1() {
         let input = generator(SAMPLE);
-        println!("{:?}", input[3079].edges());
-        println!("{:?}", input[2473].rotate(116, Dir::Top, false).edges());
+        // println!("{:?}", input[3079].edges());
+        // println!("{:?}", input[2473].rotate(116, Dir::Top, false).edges());
 
         assert_eq!(input.len(), 9);
         assert_eq!(part1(&input), 20899048083289);
@@ -263,7 +396,8 @@ mod tests {
 
     #[test]
     fn test_rotate() {
-        const TILEA: &str = "#.#.#####.
+        const TILE: [&str; 4] = [
+            "#.#.#####.
 .#..######
 ..#.......
 ######....
@@ -272,40 +406,139 @@ mod tests {
 #.#####.##
 ..#.###...
 ..#.......
-..#.###...";
-
-        const TILE_B: &str = "...###.#..
+..#.###...",
+            "...#.##..#
+....###.#.
+####.###.#
+...#.##...
+#.##..#.##
+#.#####.##
+#.##....##
+....#...##
+...###..##
+...#....#.",
+            "...###.#..
 .......#..
 ...###.#..
-#.#####.##
+##.#####.#
 .##.#...#.
 .#..#.####
 ....######
 .......#..
 ######..#.
-.#####.#.#";
+.#####.#.#",
+            ".#....#...
+##..###...
+##...#....
+##....##.#
+##.#####.#
+##.#..##.#
+...##.#...
+#.###.####
+.#.###....
+#..##.#...",
+        ];
 
-        let tilea = Tile::new(
-            1234,
-            TILEA
-                .lines()
-                .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
-                .collect(),
+        const FLIP: [&str; 4] = [
+            ".#####.#.#
+######..#.
+.......#..
+....######
+.#..#.####
+.##.#...#.
+##.#####.#
+...###.#..
+.......#..
+...###.#..",
+            "...#....#.
+...###..##
+....#...##
+#.##....##
+#.#####.##
+#.##..#.##
+...#.##...
+####.###.#
+....###.#.
+...#.##..#",
+            "..#.###...
+..#.......
+..#.###...
+#.#####.##
+.#...#.##.
+####.#..#.
+######....
+..#.......
+.#..######
+#.#.#####.",
+            "#..##.#...
+.#.###....
+#.###.####
+...##.#...
+##.#..##.#
+##.#####.#
+##....##.#
+##...#....
+##..###...
+.#....#...",
+        ];
+
+        let tiles = TILE
+            .iter()
+            .map(|tile| {
+                Tile::new(
+                    1234,
+                    tile.lines()
+                        .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
+                        .collect(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let flip = FLIP
+            .iter()
+            .map(|tile| {
+                Tile::new(
+                    1234,
+                    tile.lines()
+                        .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
+                        .collect(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let mut data = tiles[0].data.clone();
+        rotate_right(&mut data);
+        assert_eq!(data, tiles[1].data);
+
+        rotate_right(&mut data);
+        assert_eq!(data, tiles[2].data);
+
+        rotate_right(&mut data);
+        assert_eq!(data, tiles[3].data);
+
+        assert_eq!(
+            tiles[2].rotate(702, Dir::Top).edges(),
+            flip[0].edges(),
+            "{:?}",
+            tiles[2].rotate(702, Dir::Top).edges()
         );
 
-        let tileb = Tile::new(
-            1234,
-            TILE_B
-                .lines()
-                .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
-                .collect(),
-        );
+        for &d in &[Dir::Top, Dir::Right, Dir::Bottom, Dir::Left] {
+            // assert_eq!(tiles[0].rotate(702, d).edges().0[d.value()], 702);
 
-        assert_eq!(tilea.edges(), tileb.rotate(702, Dir::Top, false).edges());
+            assert_eq!(
+                tiles[0].rotate(702, d).edges(),
+                tiles[d.value()].edges(),
+                "{:?}",
+                d
+            );
 
-        for d in 0..4 {
-            assert_eq!(tilea.rotate(702, d.into(), false).edges().0[d], 702);
-            assert_eq!(tilea.rotate(184, d.into(), true).edges().0[d], 184);
+            assert_eq!(
+                tiles[0].rotate(501, d).edges(),
+                flip[d.value()].edges(),
+                "{:?}",
+                d
+            );
         }
     }
 
