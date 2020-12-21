@@ -72,7 +72,7 @@ impl Floor {
         col: usize,
         delta_r: Direction,
         delta_c: Direction,
-    ) -> QueenIterator {
+    ) -> QueenIterator<'_> {
         QueenIterator {
             row,
             col,
