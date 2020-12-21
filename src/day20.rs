@@ -102,7 +102,7 @@ where
         }
 
         let map = sea_monster_chksum(r1, r2, r3);
-        if SEA_MONSTER & map >= SEA_MONSTER {
+        if SEA_MONSTER & map == SEA_MONSTER {
             count += 1;
         }
     }
@@ -141,40 +141,6 @@ fn check_sea_monster2() {
     let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
 
     assert_eq!(count, 1)
-}
-
-#[test]
-fn test_big_monster() {
-    const TEST: [&[u8]; 24] = [
-        b".####...#####..#...###..",
-        b"#####..#..#.#.####..#.#.",
-        b".#.#...#.###...#.##.##..",
-        b"#.#.##.###.#.##.##.#####",
-        b"..##.###.####..#.####.##",
-        b"...#.#..##.##...#..#..##",
-        b"#.##.#..#.#..#..##.#.#..",
-        b".###.##.....#...###.#...",
-        b"#.####.#.#....##.#..#.#.",
-        b"##...#..#....#..#...####",
-        b"..#.##...###..#.#####..#",
-        b"....#.##.#.#####....#...",
-        b"..##.##.###.....#.##..#.",
-        b"#...#...###..####....##.",
-        b".#.##...#.##.#.#.###...#",
-        b"#.###.#..####...##..#...",
-        b"#.###...#.##...#.######.",
-        b".###.###.#######..#####.",
-        b"..##.#..#..#.#######.###",
-        b"#.#..##.########..#..##.",
-        b"#.#####..#.#...##..#....",
-        b"#....##..#.#########..##",
-        b"#...#.....#..##...###.##",
-        b"#..###....##.#...##.##.#",
-    ];
-
-    let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
-
-    assert_eq!(count, 2)
 }
 
 #[derive(Debug, PartialEq)]
@@ -542,41 +508,41 @@ pub fn part2(tiles: &[Tile]) -> usize {
         tiles.len()
     );
 
-    // {
-    //     let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
+    {
+        let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
 
-    //     for (r, m_row) in mosiac.iter().enumerate() {
-    //         for (c, cell) in m_row.iter().enumerate() {
-    //             let r_offset = r * 10;
-    //             let c_offset = c * 10;
-    //             let map = cell.as_ref().unwrap().symbols_debug();
+        for (r, m_row) in mosiac.iter().enumerate() {
+            for (c, cell) in m_row.iter().enumerate() {
+                let r_offset = r * 10;
+                let c_offset = c * 10;
+                let map = cell.as_ref().unwrap().symbols_debug();
 
-    //             for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
-    //                 .iter_mut()
-    //                 .zip(map.iter())
-    //             {
-    //                 row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
-    //             }
-    //         }
-    //     }
+                for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
+                    .iter_mut()
+                    .zip(map.iter())
+                {
+                    row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
+                }
+            }
+        }
 
-    //     println!();
-    //     for (r, row) in full_grid.iter().enumerate() {
-    //         if r % 10 == 0 {
-    //             println!(
-    //                 "{}",
-    //                 std::iter::repeat('-')
-    //                     .take(full_grid.len() + full_grid.len() / 10)
-    //                     .collect::<String>()
-    //             );
-    //         }
+        println!();
+        for (r, row) in full_grid.iter().enumerate() {
+            if r % 10 == 0 {
+                println!(
+                    "{}",
+                    std::iter::repeat('-')
+                        .take(full_grid.len() + full_grid.len() / 10)
+                        .collect::<String>()
+                );
+            }
 
-    //         for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
-    //             print!("{}|", sec);
-    //         }
-    //         println!();
-    //     }
-    // }
+            for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
+                print!("{}|", sec);
+            }
+            println!();
+        }
+    }
 
     let mut grid = vec![vec![b'.'; l * 8]; l * 8];
 
@@ -597,14 +563,16 @@ pub fn part2(tiles: &[Tile]) -> usize {
     for _ in 0..2 {
         for _ in 0..4 {
             println!();
-            for row in grid.iter() {
-                println!("{}", row.iter().map(|x| *x as char).collect::<String>());
-            }
 
             for rows in grid.windows(3) {
                 count += check_sea_monster(rows);
             }
-            println!("count: {}", count);
+            if count > 0 {
+                for row in grid.iter() {
+                    println!("{}", row.iter().map(|x| *x as char).collect::<String>());
+                }
+                println!("count: {}", count);
+            }
 
             rotate_right(&mut grid);
         }
