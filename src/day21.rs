@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq)]
 pub struct Food {
@@ -40,19 +40,18 @@ pub fn generator(input: &str) -> Vec<Food> {
 }
 
 fn solve(foods: &[Food]) -> (HashMap<&str, HashSet<&str>>, HashMap<&str, usize>) {
-    let all_ingredients = foods
-        .iter()
-        .flat_map(|food| food.ingredients.iter().map(|x| x.as_str()))
-        .collect::<HashSet<_>>();
-
-    let all_allergens = foods
-        .iter()
-        .flat_map(|food| food.allergens.iter().map(|x| x.as_str()))
-        .collect::<HashSet<_>>();
+    let (all_ingredients, all_allergens) = foods.iter().fold(
+        (HashSet::new(), HashSet::new()),
+        |(mut ing, mut all), food| {
+            ing.extend(food.ingredients.iter().map(|x| x.as_str()));
+            all.extend(food.allergens.iter().map(|x| x.as_str()));
+            (ing, all)
+        },
+    );
 
     let mut possibilities = all_ingredients
         .iter()
-        .map(|i| (*i, all_allergens.clone()))
+        .map(|&ing| (ing, all_allergens.clone()))
         .collect::<HashMap<_, _>>();
 
     let mut frequency = HashMap::new();
@@ -64,13 +63,14 @@ fn solve(foods: &[Food]) -> (HashMap<&str, HashSet<&str>>, HashMap<&str, usize>)
         // For every ingredient, check against every food.
         // if the food does not contain the ingredient, then we can remove it
         // as a possible allergen
-        for &ing in all_ingredients.iter() {
-            for allergens in food.allergens.iter().map(|f| f.as_str()) {
-                if !food.ingredients.contains(ing) {
-                    possibilities.entry(ing).and_modify(|s| {
-                        s.remove(allergens);
-                    });
-                }
+        for allergens in food.allergens.iter().map(|f| f.as_str()) {
+            for &ing in all_ingredients
+                .iter()
+                .filter(|&&ing| !food.ingredients.contains(ing))
+            {
+                possibilities.entry(ing).and_modify(|s| {
+                    s.remove(allergens);
+                });
             }
         }
     }
@@ -98,33 +98,27 @@ pub fn part1(foods: &[Food]) -> usize {
 #[aoc(day21, part2)]
 pub fn part2(foods: &[Food]) -> String {
     let (mut possibilities, _) = solve(foods);
-    let mut allergens = BTreeSet::new();
+    possibilities.retain(|_, s| !s.is_empty());
 
-    loop {
-        // println!("{:?}", possibilities);
-        let mut allergen = None;
-        for (&ing, s) in possibilities.iter() {
-            if s.len() == 1 {
-                allergen = s.iter().next().copied();
-                if let Some(allergen) = allergen {
-                    allergens.insert((allergen, ing));
-                }
-            }
+    // let mut allergens = BTreeSet::new();
+    let mut allergens = Vec::new();
+
+    while let Some((allergen, ingredient)) = possibilities.iter().find_map(|(&ing, s)| {
+        if s.len() == 1 {
+            s.iter().next().copied().map(|x| (x, ing))
+        } else {
+            None
         }
+    }) {
+        allergens.push((allergen, ingredient));
 
-        if let Some(allergens) = allergen {
-            for s in possibilities.values_mut() {
-                s.remove(allergens);
-            }
-        }
-
-        possibilities.retain(|_, s| !s.is_empty());
-        if possibilities.is_empty() {
-            break;
+        for s in possibilities.values_mut() {
+            s.remove(allergen);
         }
     }
 
     // println!("{:?}", allergens);
+    allergens.sort_unstable();
 
     allergens
         .iter()
