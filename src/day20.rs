@@ -400,7 +400,7 @@ pub fn generator(input: &str) -> Vec<Tile> {
         .collect()
 }
 
-fn solve1(cache: &TileCache) -> (Vec<usize>, Vec<usize>) {
+fn solve1(cache: &TileCache<'_>) -> (Vec<usize>, Vec<usize>) {
     // maps tileid to unique_edges
     let unique_tile_edge_count =
         cache
@@ -438,7 +438,7 @@ pub fn part2(tiles: &[Tile]) -> usize {
     let (corners, _sides) = solve1(&cache);
     let l = if tiles.len() == 144 { 12 } else { 3 }; // Cheating, you can use sqrt
 
-    let mut mosiac: Vec<Vec<Option<ModifiedTile>>> = vec![vec![None; l]; l];
+    let mut mosiac: Vec<Vec<Option<ModifiedTile<'_>>>> = vec![vec![None; l]; l];
 
     for row in 0..l {
         let mut last_mt;

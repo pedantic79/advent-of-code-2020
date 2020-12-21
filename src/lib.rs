@@ -1,3 +1,4 @@
+#![warn(rust_2018_idioms)]
 #[macro_use]
 extern crate aoc_runner_derive;
 
