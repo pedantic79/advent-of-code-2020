@@ -1,10 +1,12 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-const SEA_MONSTER: [&[u8]; 3] = [
-    b"                  # ",
-    b"#    ##    ##    ###",
-    b" #  #  #  #  #  #   ",
-];
+// const SEA_MONSTER: [&[u8]; 3] = [
+//     b"                  # ",
+//     b"#    ##    ##    ###",
+//     b" #  #  #  #  #  #   ",
+// ];
+
+const SEA_MONSTER: u64 = 82352190514266112;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir {
@@ -65,46 +67,65 @@ where
     }
 }
 
-fn check_sea(row: &[u8], sea: &[u8]) -> bool {
-    assert!(row.len() >= sea.len());
+fn sea_monster_chksum(r1: &[u8], r2: &[u8], r3: &[u8]) -> u64 {
+    let mut num = 0;
 
-    let flag = row.windows(20).any(|r| {
-        sea.len() == r.len()
-            && sea
-                .iter()
-                .zip(r.iter())
-                .filter(|(&x, _)| x == b'#')
-                .all(|(x, y)| x == y)
-    });
+    for &n in r1.iter().chain(r2.iter()).chain(r3.iter()).rev() {
+        num = num * 2 + if n == b'#' { 1 } else { 0 };
+    }
 
-    // println!(
-    //     "{} {:?} = {:?}",
-    //     flag,
-    //     std::str::from_utf8(row),
-    //     std::str::from_utf8(sea)
-    // );
-    flag
+    num
 }
 
-#[test]
-fn check_sea_monster() {
-    const TEST: [&[u8]; 3] = [
-        b".#...#.###...#.##.##",
-        b"#.##.###.#.##.##.###",
-        b"##.###.####..#.####.",
-    ];
+fn check_sea_monster<A>(grid: &[A]) -> usize
+where
+    A: AsRef<[u8]>,
+{
+    assert_eq!(grid.len(), 3);
+    let len = grid[0].as_ref().len();
 
-    for rows in TEST.windows(3) {
-        if rows
-            .iter()
-            .zip(SEA_MONSTER.iter().copied())
-            .all(|(row, sea)| check_sea(row, sea))
-        {
-            return;
+    // let sea_monster = dbg!(sea_monster_chksum(
+    //     SEA_MONSTER[0],
+    //     SEA_MONSTER[1],
+    //     SEA_MONSTER[2]
+    // ));
+
+    let mut count = 0;
+    for offset in 0.. {
+        let end = len.min(offset + 20);
+        let r1 = &grid[0].as_ref()[offset..end];
+        let r2 = &grid[1].as_ref()[offset..end];
+        let r3 = &grid[2].as_ref()[offset..end];
+
+        if r1.len() < 20 {
+            break;
+        }
+
+        let map = sea_monster_chksum(r1, r2, r3);
+        if SEA_MONSTER & map >= SEA_MONSTER {
+            count += 1;
         }
     }
 
-    assert!(false)
+    count
+}
+
+#[test]
+fn test_check_sea_monster() {
+    const TEST: [&[u8]; 3] = [
+        b"#.##....##.......###.#.#............#....#.......#.#........#..#..#..............#.......##.##..",
+        b"........#..#...#...####......#......#......##.......#..#...###.###..###.##.#..##.#.##...........",
+        b"#..........#.....#.........#...#....#.....###............##...#...#.#..#.###...##....###.#......",
+    ];
+
+    const GRID: [&[u8]; 3] = [
+        b"#..#...#..#..#..#..#..#.........##..#......#..#.##...##........#.............#.#.......#...#..#.",
+        b"..#...#...###....##....###..........#.##........##.......#.....#...#....#..#.###.#..#.##.#..##..",
+        b"...#.......##...........#...#.#.#.#..##.#..#..##.#.#.#...........#.#..##....####.###..#.####....",
+    ];
+
+    assert_eq!(check_sea_monster(&TEST), 0);
+    assert_eq!(check_sea_monster(&GRID), 0);
 }
 
 #[test]
@@ -117,18 +138,43 @@ fn check_sea_monster2() {
         b"..##.###.####..#.####.##",
     ];
 
-    let mut count = 0;
-    for rows in TEST.windows(3) {
-        if rows
-            .iter()
-            .zip(SEA_MONSTER.iter().copied())
-            .all(|(row, sea)| check_sea(row, sea))
-        {
-            count += 1;
-        }
-    }
+    let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
 
     assert_eq!(count, 1)
+}
+
+#[test]
+fn test_big_monster() {
+    const TEST: [&[u8]; 24] = [
+        b".####...#####..#...###..",
+        b"#####..#..#.#.####..#.#.",
+        b".#.#...#.###...#.##.##..",
+        b"#.#.##.###.#.##.##.#####",
+        b"..##.###.####..#.####.##",
+        b"...#.#..##.##...#..#..##",
+        b"#.##.#..#.#..#..##.#.#..",
+        b".###.##.....#...###.#...",
+        b"#.####.#.#....##.#..#.#.",
+        b"##...#..#....#..#...####",
+        b"..#.##...###..#.#####..#",
+        b"....#.##.#.#####....#...",
+        b"..##.##.###.....#.##..#.",
+        b"#...#...###..####....##.",
+        b".#.##...#.##.#.#.###...#",
+        b"#.###.#..####...##..#...",
+        b"#.###...#.##...#.######.",
+        b".###.###.#######..#####.",
+        b"..##.#..#..#.#######.###",
+        b"#.#..##.########..#..##.",
+        b"#.#####..#.#...##..#....",
+        b"#....##..#.#########..##",
+        b"#...#.....#..##...###.##",
+        b"#..###....##.#...##.##.#",
+    ];
+
+    let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
+
+    assert_eq!(count, 2)
 }
 
 #[derive(Debug, PartialEq)]
@@ -496,41 +542,41 @@ pub fn part2(tiles: &[Tile]) -> usize {
         tiles.len()
     );
 
-    {
-        let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
+    // {
+    //     let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
 
-        for (r, m_row) in mosiac.iter().enumerate() {
-            for (c, cell) in m_row.iter().enumerate() {
-                let r_offset = r * 10;
-                let c_offset = c * 10;
-                let map = cell.as_ref().unwrap().symbols_debug();
+    //     for (r, m_row) in mosiac.iter().enumerate() {
+    //         for (c, cell) in m_row.iter().enumerate() {
+    //             let r_offset = r * 10;
+    //             let c_offset = c * 10;
+    //             let map = cell.as_ref().unwrap().symbols_debug();
 
-                for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
-                    .iter_mut()
-                    .zip(map.iter())
-                {
-                    row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
-                }
-            }
-        }
+    //             for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
+    //                 .iter_mut()
+    //                 .zip(map.iter())
+    //             {
+    //                 row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
+    //             }
+    //         }
+    //     }
 
-        println!();
-        for (r, row) in full_grid.iter().enumerate() {
-            if r % 10 == 0 {
-                println!(
-                    "{}",
-                    std::iter::repeat('-')
-                        .take(full_grid.len() + full_grid.len() / 10)
-                        .collect::<String>()
-                );
-            }
+    //     println!();
+    //     for (r, row) in full_grid.iter().enumerate() {
+    //         if r % 10 == 0 {
+    //             println!(
+    //                 "{}",
+    //                 std::iter::repeat('-')
+    //                     .take(full_grid.len() + full_grid.len() / 10)
+    //                     .collect::<String>()
+    //             );
+    //         }
 
-            for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
-                print!("{}|", sec);
-            }
-            println!();
-        }
-    }
+    //         for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
+    //             print!("{}|", sec);
+    //         }
+    //         println!();
+    //     }
+    // }
 
     let mut grid = vec![vec![b'.'; l * 8]; l * 8];
 
@@ -548,26 +594,17 @@ pub fn part2(tiles: &[Tile]) -> usize {
 
     let mut count = 0;
 
-    'outer: for _ in 0..2 {
+    for _ in 0..2 {
         for _ in 0..4 {
-            // println!();
-            // for row in grid.iter() {
-            //     println!("{}", row.iter().map(|x| *x as char).collect::<String>());
-            // }
+            println!();
+            for row in grid.iter() {
+                println!("{}", row.iter().map(|x| *x as char).collect::<String>());
+            }
 
             for rows in grid.windows(3) {
-                if rows
-                    .iter()
-                    .zip(SEA_MONSTER.iter().copied())
-                    .all(|(row, sea)| check_sea(row, sea))
-                {
-                    count += 1;
-                }
+                count += check_sea_monster(rows);
             }
             println!("count: {}", count);
-            // if count > 0 {
-            //     break 'outer;
-            // }
 
             rotate_right(&mut grid);
         }
@@ -610,6 +647,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn test_rotate() {
         const TILE: [&str; 4] = [
             "#.#.#####.
@@ -762,14 +800,14 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day20.txt");
-        const ANSWERS: (usize, usize) = (104831106565027, 0);
+        const ANSWERS: (usize, usize) = (104831106565027, 2093);
 
         #[test]
         pub fn test() {
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
 
             assert_eq!(part1(&generator(input)), ANSWERS.0);
-            // assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part2(&generator(input)), ANSWERS.1);
         }
     }
 }
