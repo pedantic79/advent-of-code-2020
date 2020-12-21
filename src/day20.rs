@@ -81,16 +81,18 @@ where
 {
     let len = a.len();
 
-    if len % 2 == 0 {
-        for i in 0..(len / 2) {
-            for j in i..(len - i - 1) {
-                let temp = a[i].as_mut()[j];
-                a[i].as_mut()[j] = a[len - i - 1].as_mut()[len - j - 1];
-                a[len - i - 1].as_mut()[len - j - 1] = temp;
-            }
+    if len % 2 == 1 {
+        for j in 0..(len / 2) {
+            a[len / 2].as_mut().swap(j, len - j - 1);
         }
-    } else {
-        unimplemented!()
+    }
+
+    for i in 0..(len / 2) {
+        for j in 0..len {
+            let temp = a[i].as_mut()[j];
+            a[i].as_mut()[j] = a[len - i - 1].as_mut()[len - j - 1];
+            a[len - i - 1].as_mut()[len - j - 1] = temp;
+        }
     }
 }
 
@@ -128,15 +130,11 @@ where
     // ));
 
     let mut count = 0;
-    for offset in 0.. {
-        let end = len.min(offset + 20);
+    for offset in 0..(len - 20) {
+        let end = offset + 20;
         let r1 = &grid[0].as_ref()[offset..end];
         let r2 = &grid[1].as_ref()[offset..end];
         let r3 = &grid[2].as_ref()[offset..end];
-
-        if r1.len() < 20 {
-            break;
-        }
 
         let map = sea_monster_chksum(r1, r2, r3);
         if SEA_MONSTER & map == SEA_MONSTER {
@@ -284,13 +282,21 @@ impl<'a> ModifiedTile<'a> {
             flip(&mut grid);
         }
 
-        for _ in 0..self.direction.value() {
-            rotate_right(&mut grid);
+        // for _ in 0..self.direction.value() {
+        //     rotate_right(&mut grid);
+        // }
+
+        match self.direction.value() {
+            1 => rotate_right(&mut grid),
+            2 => rotate_bottom(&mut grid),
+            3 => rotate_left(&mut grid),
+            _ => {}
         }
 
         grid
     }
 
+    #[allow(dead_code)]
     fn symbols_debug(&self) -> [[u8; 10]; 10] {
         let mut grid = [[b'.'; 10]; 10];
 
@@ -615,7 +621,7 @@ mod tests {
     }
 
     #[test]
-    fn check_sea_monster2() {
+    fn test_check_sea_monster2() {
         const TEST: [&[u8]; 5] = [
             b".####...#####..#...###..",
             b"#####..#..#.#.####..#.#.",
