@@ -57,6 +57,43 @@ where
     }
 }
 
+fn rotate_left<T, A>(a: &mut [A])
+where
+    T: Default + Copy,
+    A: AsMut<[T]>,
+{
+    let len = a.len();
+    for i in 0..(len / 2) {
+        for j in i..(len - i - 1) {
+            let temp = a[i].as_mut()[j];
+            a[i].as_mut()[j] = a[j].as_mut()[len - 1 - i];
+            a[j].as_mut()[len - 1 - i] = a[len - 1 - i].as_mut()[len - 1 - j];
+            a[len - 1 - i].as_mut()[len - 1 - j] = a[len - 1 - j].as_mut()[i];
+            a[len - 1 - j].as_mut()[i] = temp;
+        }
+    }
+}
+
+fn rotate_bottom<T, A>(a: &mut [A])
+where
+    T: Default + Copy,
+    A: AsMut<[T]>,
+{
+    let len = a.len();
+
+    if len % 2 == 0 {
+        for i in 0..(len / 2) {
+            for j in i..(len - i - 1) {
+                let temp = a[i].as_mut()[j];
+                a[i].as_mut()[j] = a[len - i - 1].as_mut()[len - j - 1];
+                a[len - i - 1].as_mut()[len - j - 1] = temp;
+            }
+        }
+    } else {
+        unimplemented!()
+    }
+}
+
 fn flip<T, A>(a: &mut [A])
 where
     T: Default + Copy,
@@ -81,7 +118,7 @@ fn check_sea_monster<A>(grid: &[A]) -> usize
 where
     A: AsRef<[u8]>,
 {
-    assert_eq!(grid.len(), 3);
+    debug_assert_eq!(grid.len(), 3);
     let len = grid[0].as_ref().len();
 
     // let sea_monster = dbg!(sea_monster_chksum(
@@ -110,56 +147,10 @@ where
     count
 }
 
-#[test]
-fn test_check_sea_monster() {
-    const TEST: [&[u8]; 3] = [
-        b"#.##....##.......###.#.#............#....#.......#.#........#..#..#..............#.......##.##..",
-        b"........#..#...#...####......#......#......##.......#..#...###.###..###.##.#..##.#.##...........",
-        b"#..........#.....#.........#...#....#.....###............##...#...#.#..#.###...##....###.#......",
-    ];
-
-    const GRID: [&[u8]; 3] = [
-        b"#..#...#..#..#..#..#..#.........##..#......#..#.##...##........#.............#.#.......#...#..#.",
-        b"..#...#...###....##....###..........#.##........##.......#.....#...#....#..#.###.#..#.##.#..##..",
-        b"...#.......##...........#...#.#.#.#..##.#..#..##.#.#.#...........#.#..##....####.###..#.####....",
-    ];
-
-    assert_eq!(check_sea_monster(&TEST), 0);
-    assert_eq!(check_sea_monster(&GRID), 0);
-}
-
-#[test]
-fn check_sea_monster2() {
-    const TEST: [&[u8]; 5] = [
-        b".####...#####..#...###..",
-        b"#####..#..#.#.####..#.#.",
-        b".#.#...#.###...#.##.##..",
-        b"#.#.##.###.#.##.##.#####",
-        b"..##.###.####..#.####.##",
-    ];
-
-    let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
-
-    assert_eq!(count, 1)
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Tile {
     id: usize,
     data: Vec<Vec<u16>>,
-}
-
-fn complement(mut edge: u16) -> u16 {
-    let mut data = [0; 10];
-    let mut i = 0;
-
-    while edge > 0 {
-        data[i] = edge & 1;
-        edge >>= 1;
-        i += 1;
-    }
-
-    data.iter().rev().fold(0, |acc, n| acc * 2 + n)
 }
 
 impl Tile {
@@ -198,16 +189,11 @@ impl Tile {
         ([a1, d1, b1, c1], [a2, d2, b2, c2])
     }
 
-    fn rotate(&self, edge: u16, direction: Dir, flip: Option<bool>) -> ModifiedTile<'_> {
+    fn rotate(&self, edge: u16, direction: Dir) -> ModifiedTile<'_> {
         let mut d = 0;
-        let flip_search = match flip {
-            Some(true) => &[true][..],
-            Some(false) => &[false][..],
-            None => &[false, true][..],
-        };
 
         loop {
-            for &flipped in flip_search {
+            for &flipped in &[false, true] {
                 let mt = ModifiedTile {
                     flipped,
                     direction: d.into(),
@@ -285,14 +271,6 @@ impl<'a> ModifiedTile<'a> {
         }
     }
 
-    fn dir(&self, dir: Dir) -> Dir {
-        match (self.flipped, dir) {
-            (true, Dir::Left) => Dir::Right,
-            (true, Dir::Right) => Dir::Left,
-            _ => dir,
-        }
-    }
-
     fn symbols(&self) -> [[u8; 8]; 8] {
         let mut grid = [[b'.'; 8]; 8];
 
@@ -302,11 +280,12 @@ impl<'a> ModifiedTile<'a> {
             }
         }
 
-        for _ in 0..self.direction.value() {
-            rotate_right(&mut grid);
-        }
         if self.flipped {
             flip(&mut grid);
+        }
+
+        for _ in 0..self.direction.value() {
+            rotate_right(&mut grid);
         }
 
         grid
@@ -336,8 +315,6 @@ impl<'a> ModifiedTile<'a> {
 struct TileCache<'a> {
     id2tile: HashMap<usize, &'a Tile>,
     edge2tile: HashMap<u16, Vec<&'a Tile>>,
-    edge2id: HashMap<u16, Vec<usize>>,
-    unique_tile_edge_count: HashMap<usize, usize>,
 }
 
 impl<'a> TileCache<'a> {
@@ -348,35 +325,16 @@ impl<'a> TileCache<'a> {
             .collect::<HashMap<_, _>>();
 
         let mut edge2tile = HashMap::new();
-        let mut edge2id = HashMap::new();
 
         for tile in tiles.iter() {
-            let id = tile.id;
             let (normal, flipped) = tile.edges();
 
             for edge in normal.iter().chain(flipped.iter()) {
                 edge2tile.entry(*edge).or_insert_with(Vec::new).push(tile);
-                edge2id.entry(*edge).or_insert_with(Vec::new).push(id);
             }
         }
 
-        // maps tileid to unique_edges
-        let unique_tile_edge_count =
-            edge2id
-                .iter()
-                .fold(HashMap::new(), |mut hm, (_edge_id, tileids)| {
-                    if tileids.len() == 1 {
-                        *hm.entry(tileids[0]).or_insert(0_usize) += 1;
-                    }
-                    hm
-                });
-
-        Self {
-            id2tile,
-            edge2tile,
-            edge2id,
-            unique_tile_edge_count,
-        }
+        Self { id2tile, edge2tile }
     }
 
     // Orient tile so top and left corners are unique
@@ -407,7 +365,7 @@ impl<'a> TileCache<'a> {
     }
 
     fn get_edge_count_by_edge_id(&self, edge_id: u16) -> usize {
-        self.edge2id[&edge_id].len()
+        self.edge2tile[&edge_id].len()
     }
 }
 
@@ -437,14 +395,23 @@ pub fn generator(input: &str) -> Vec<Tile> {
 }
 
 fn solve1(cache: &TileCache) -> (Vec<usize>, Vec<usize>) {
-    let corners: Vec<usize> = cache
-        .unique_tile_edge_count
+    // maps tileid to unique_edges
+    let unique_tile_edge_count =
+        cache
+            .edge2tile
+            .iter()
+            .fold(HashMap::new(), |mut hm, (_edge_id, tileids)| {
+                if tileids.len() == 1 {
+                    *hm.entry(tileids[0].id).or_insert(0_usize) += 1;
+                }
+                hm
+            });
+    let corners: Vec<usize> = unique_tile_edge_count
         .iter()
         .filter_map(|(id, c)| if *c > 2 { Some(*id) } else { None })
         .collect();
 
-    let sides = cache
-        .unique_tile_edge_count
+    let sides = unique_tile_edge_count
         .iter()
         .filter_map(|(id, c)| if *c <= 2 { Some(*id) } else { None })
         .collect();
@@ -481,7 +448,7 @@ pub fn part2(tiles: &[Tile]) -> usize {
                 .copied()
                 .unwrap();
 
-            last_mt = next.rotate(target_top_edge, Dir::Top, None);
+            last_mt = next.rotate(target_top_edge, Dir::Top);
         }
         mosiac[row][0] = Some(last_mt.clone());
 
@@ -493,55 +460,54 @@ pub fn part2(tiles: &[Tile]) -> usize {
                 .copied()
                 .unwrap();
 
-            last_mt = next.rotate(target_left_edge, Dir::Left, None);
+            last_mt = next.rotate(target_left_edge, Dir::Left);
             *target = Some(last_mt.clone());
         }
     }
 
-    assert_eq!(
+    debug_assert_eq!(
         mosiac
             .iter()
             .flat_map(|row| row.iter())
             .filter_map(|x| x.as_ref().map(|mt| mt.tile.id))
-            .collect::<std::collections::HashSet<_>>()
-            .len(),
-        tiles.len()
+            .collect::<HashSet<_>>(),
+        tiles.iter().map(|x| x.id).collect::<HashSet<_>>()
     );
 
     {
-        let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
+        // let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
 
-        for (r, m_row) in mosiac.iter().enumerate() {
-            for (c, cell) in m_row.iter().enumerate() {
-                let r_offset = r * 10;
-                let c_offset = c * 10;
-                let map = cell.as_ref().unwrap().symbols_debug();
+        // for (r, m_row) in mosiac.iter().enumerate() {
+        //     for (c, cell) in m_row.iter().enumerate() {
+        //         let r_offset = r * 10;
+        //         let c_offset = c * 10;
+        //         let map = cell.as_ref().unwrap().symbols_debug();
 
-                for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
-                    .iter_mut()
-                    .zip(map.iter())
-                {
-                    row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
-                }
-            }
-        }
+        //         for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
+        //             .iter_mut()
+        //             .zip(map.iter())
+        //         {
+        //             row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
+        //         }
+        //     }
+        // }
 
-        println!();
-        for (r, row) in full_grid.iter().enumerate() {
-            if r % 10 == 0 {
-                println!(
-                    "{}",
-                    std::iter::repeat('-')
-                        .take(full_grid.len() + full_grid.len() / 10)
-                        .collect::<String>()
-                );
-            }
+        // println!();
+        // for (r, row) in full_grid.iter().enumerate() {
+        //     if r % 10 == 0 {
+        //         println!(
+        //             "{}",
+        //             std::iter::repeat('-')
+        //                 .take(full_grid.len() + full_grid.len() / 10)
+        //                 .collect::<String>()
+        //         );
+        //     }
 
-            for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
-                print!("{}|", sec);
-            }
-            println!();
-        }
+        //     for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
+        //         print!("{}|", sec);
+        //     }
+        //     println!();
+        // }
     }
 
     let mut grid = vec![vec![b'.'; l * 8]; l * 8];
@@ -562,16 +528,32 @@ pub fn part2(tiles: &[Tile]) -> usize {
 
     for _ in 0..2 {
         for _ in 0..4 {
-            println!();
-
             for rows in grid.windows(3) {
                 count += check_sea_monster(rows);
             }
             if count > 0 {
-                for row in grid.iter() {
-                    println!("{}", row.iter().map(|x| *x as char).collect::<String>());
-                }
-                println!("count: {}", count);
+                //     if false {
+                //         for row in grid.iter() {
+                //             println!("{}", row.iter().map(|x| *x as char).collect::<String>());
+                //         }
+                //     } else {
+                //         for (r, row) in grid.iter().enumerate() {
+                //             if r % 8 == 0 {
+                //                 println!(
+                //                     "{}",
+                //                     std::iter::repeat('-').take(l * 11).collect::<String>()
+                //                 );
+                //             }
+
+                //             for sec in row.chunks(8).map(|x| std::str::from_utf8(x).unwrap()) {
+                //                 print!(" {} |", sec);
+                //             }
+                //             println!();
+                //         }
+                //     }
+
+                //     println!("count: {}", count);
+                break;
             }
 
             rotate_right(&mut grid);
@@ -615,153 +597,36 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_rotate() {
-        const TILE: [&str; 4] = [
-            "#.#.#####.
-.#..######
-..#.......
-######....
-####.#..#.
-.#...#.##.
-#.#####.##
-..#.###...
-..#.......
-..#.###...",
-            "...#.##..#
-....###.#.
-####.###.#
-...#.##...
-#.##..#.##
-#.#####.##
-#.##....##
-....#...##
-...###..##
-...#....#.",
-            "...###.#..
-.......#..
-...###.#..
-##.#####.#
-.##.#...#.
-.#..#.####
-....######
-.......#..
-######..#.
-.#####.#.#",
-            ".#....#...
-##..###...
-##...#....
-##....##.#
-##.#####.#
-##.#..##.#
-...##.#...
-#.###.####
-.#.###....
-#..##.#...",
+    fn test_check_sea_monster() {
+        const TEST: [&[u8]; 3] = [
+        b"#.##....##.......###.#.#............#....#.......#.#........#..#..#..............#.......##.##..",
+        b"........#..#...#...####......#......#......##.......#..#...###.###..###.##.#..##.#.##...........",
+        b"#..........#.....#.........#...#....#.....###............##...#...#.#..#.###...##....###.#......",
+    ];
+
+        const GRID: [&[u8]; 3] = [
+        b"#..#...#..#..#..#..#..#.........##..#......#..#.##...##........#.............#.#.......#...#..#.",
+        b"..#...#...###....##....###..........#.##........##.......#.....#...#....#..#.###.#..#.##.#..##..",
+        b"...#.......##...........#...#.#.#.#..##.#..#..##.#.#.#...........#.#..##....####.###..#.####....",
+    ];
+
+        assert_eq!(check_sea_monster(&TEST), 0);
+        assert_eq!(check_sea_monster(&GRID), 0);
+    }
+
+    #[test]
+    fn check_sea_monster2() {
+        const TEST: [&[u8]; 5] = [
+            b".####...#####..#...###..",
+            b"#####..#..#.#.####..#.#.",
+            b".#.#...#.###...#.##.##..",
+            b"#.#.##.###.#.##.##.#####",
+            b"..##.###.####..#.####.##",
         ];
 
-        //         const FLIP: [&str; 4] = [
-        //             ".#####.#.#
-        // ######..#.
-        // .......#..
-        // ....######
-        // .#..#.####
-        // .##.#...#.
-        // ##.#####.#
-        // ...###.#..
-        // .......#..
-        // ...###.#..",
-        //             "...#....#.
-        // ...###..##
-        // ....#...##
-        // #.##....##
-        // #.#####.##
-        // #.##..#.##
-        // ...#.##...
-        // ####.###.#
-        // ....###.#.
-        // ...#.##..#",
-        //             "..#.###...
-        // ..#.......
-        // ..#.###...
-        // #.#####.##
-        // .#...#.##.
-        // ####.#..#.
-        // ######....
-        // ..#.......
-        // .#..######
-        // #.#.#####.",
-        //             "#..##.#...
-        // .#.###....
-        // #.###.####
-        // ...##.#...
-        // ##.#..##.#
-        // ##.#####.#
-        // ##....##.#
-        // ##...#....
-        // ##..###...
-        // .#....#...",
-        //         ];
+        let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
 
-        let tiles = TILE
-            .iter()
-            .map(|tile| {
-                Tile::new(
-                    1234,
-                    tile.lines()
-                        .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
-                        .collect(),
-                )
-            })
-            .collect::<Vec<_>>();
-
-        // let flip = FLIP
-        //     .iter()
-        //     .map(|tile| {
-        //         Tile::new(
-        //             1234,
-        //             tile.lines()
-        //                 .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
-        //                 .collect(),
-        //         )
-        //     })
-        //     .collect::<Vec<_>>();
-
-        // let mut data = tiles[0].data.clone();
-
-        // rotate_right(&mut data);
-        // assert_eq!(data, tiles[2].data);
-
-        // rotate_right(&mut data);
-        // assert_eq!(data, tiles[3].data);
-
-        // assert_eq!(
-        //     tiles[2].rotate(702, Dir::Top).edges(),
-        //     flip[0].edges(),
-        //     "{:?}",
-        //     tiles[2].rotate(702, Dir::Top).edges()
-        // );
-
-        // for &d in &[Dir::Top, Dir::Right, Dir::Bottom, Dir::Left] {
-        //     // assert_eq!(tiles[0].rotate(702, d).edges().0[d.value()], 702);
-
-        //     rotate_right(&mut data);
-        //     assert_eq!(data, tiles[d].data);
-
-        //     assert_eq!(
-        //         tiles[0].rotate(702, d, None).edges(),
-        //         tiles[d.value()].edges(),
-        //         "{:?}",
-        //         d
-        //     );
-
-        //     // assert_eq!(
-        //     //     tiles[0].rotate(501, d).edges(),
-        //     //     flip[d.value()].edges(),
-        //     //     "{:?}",
-        //     //     d
-        //     // );
-        // }
+        assert_eq!(count, 1)
     }
 
     mod regression {
