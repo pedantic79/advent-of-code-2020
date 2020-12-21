@@ -40,18 +40,17 @@ pub fn generator(input: &str) -> Vec<Food> {
 }
 
 fn solve(foods: &[Food]) -> (HashMap<&str, HashSet<&str>>, HashMap<&str, usize>) {
-    let (all_ingredients, all_allergens) = foods.iter().fold(
-        (HashSet::new(), HashSet::new()),
-        |(mut ing, mut all), food| {
-            ing.extend(food.ingredients.iter().map(|x| x.as_str()));
-            all.extend(food.allergens.iter().map(|x| x.as_str()));
-            (ing, all)
-        },
-    );
-
-    let mut possibilities = all_ingredients
+    let all_allergens = foods
         .iter()
-        .map(|&ing| (ing, all_allergens.clone()))
+        .flat_map(|food| food.allergens.iter().map(|x| x.as_str()))
+        .collect::<HashSet<_>>();
+
+    // Rather than try to find unique allergens, all we can do is remove impossible allergens
+    // we start with a HashMap mapping the ingredient to all the possible allergens.
+    let mut possibilities = foods
+        .iter()
+        .flat_map(|food| food.ingredients.iter().map(|x| x.as_str()))
+        .map(|ing| (ing, all_allergens.clone()))
         .collect::<HashMap<_, _>>();
 
     let mut frequency = HashMap::new();
@@ -60,17 +59,35 @@ fn solve(foods: &[Food]) -> (HashMap<&str, HashSet<&str>>, HashMap<&str, usize>)
             *frequency.entry(ing.as_str()).or_insert(0) += 1;
         }
 
-        // For every ingredient, check against every food.
-        // if the food does not contain the ingredient, then we can remove it
-        // as a possible allergen
-        for allergens in food.allergens.iter().map(|f| f.as_str()) {
-            for &ing in all_ingredients
-                .iter()
-                .filter(|&&ing| !food.ingredients.contains(ing))
-            {
-                possibilities.entry(ing).and_modify(|s| {
-                    s.remove(allergens);
-                });
+        // For every food, we remove possible allergens for their ingredients.
+        // e.g. All ingredients set: {fvjkl, kfcds, mxmxvkd, nhms, sbzzf, sqjhc, trh}
+        //      The first food entry: mxmxvkd kfcds sqjhc nhms (contains dairy, fish)
+        //
+        //      This means that complement ingredients is {fvjkl, sbzzf, trh}
+        //      These ingredients are not {dairy, fish}, so we remove them from the possiblities
+        //
+        //      Next food is: trh fvjkl sbzzf mxmxvkd (contains dairy)
+        //      the complement is {kfcds, nhms, sqjhc} and we can remove diary
+        //
+        //      Repeat for all foods.
+        //
+        //      This yields us this possiblity map:
+        //      {
+        //          "fvjkl": {"soy"},
+        //          "kfcds": {},
+        //          "mxmxvkd": {"dairy", "fish"},
+        //          "nhms": {},
+        //          "sbzzf": {},
+        //          "sqjhc": {"fish", "soy"}
+        //          "trh": {},
+        //      }
+        //
+        //      The ingredients with no allergies, solve part1
+        for allergen in food.allergens.iter().map(|f| f.as_str()) {
+            for (&ing, s) in possibilities.iter_mut() {
+                if !food.ingredients.contains(ing) {
+                    s.remove(allergen);
+                }
             }
         }
     }
@@ -85,11 +102,11 @@ pub fn part1(foods: &[Food]) -> usize {
 
     possibilities
         .iter()
-        .map(|(ing, allergens)| {
+        .filter_map(|(ing, allergens)| {
             if allergens.is_empty() {
-                frequency[*ing]
+                Some(frequency[*ing])
             } else {
-                0
+                None
             }
         })
         .sum()
