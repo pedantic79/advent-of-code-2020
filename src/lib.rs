@@ -25,6 +25,7 @@ pub mod day18;
 pub mod day19;
 pub mod day20;
 pub mod day21;
+pub mod day22;
 
 trait MinMaxIterator: Iterator {
     fn min_max<'a, T>(mut self) -> Option<(&'a T, &'a T)>
