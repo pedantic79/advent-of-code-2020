@@ -1,6 +1,7 @@
 use std::{
     cmp::Ordering::{Equal, Greater, Less},
-    collections::{HashSet, VecDeque},
+    collections::{hash_map::DefaultHasher, HashSet, VecDeque},
+    hash::{Hash, Hasher},
 };
 
 #[derive(Debug, PartialEq)]
@@ -10,6 +11,12 @@ fn parse_player(input: &str) -> VecDeque<usize> {
     let mut line = input.lines();
     line.next();
     line.map(|l| l.parse().unwrap()).collect()
+}
+
+fn get_hash<T: Hash>(deque: &T) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    deque.hash(&mut hasher);
+    hasher.finish()
 }
 
 #[aoc_generator(day22)]
@@ -59,15 +66,10 @@ pub fn part1(inputs: &Players) -> usize {
         .sum()
 }
 
-fn solve2(
-    player1: &mut VecDeque<usize>,
-    player2: &mut VecDeque<usize>,
-    depth: &mut usize,
-) -> usize {
+fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize {
     let mut seen1 = HashSet::new();
     let mut seen2 = HashSet::new();
 
-    *depth += 1;
     // println!(
     //     "Start of new game {:?} {:?} {} {}",
     //     player1,
@@ -79,12 +81,15 @@ fn solve2(
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
         // println!("* {:?} {:?}", player1, player2);
 
-        if seen1.contains(player1) && seen2.contains(player2) {
+        let h1 = get_hash(&player1);
+        let h2 = get_hash(&player2);
+
+        if seen1.contains(&h1) && seen2.contains(&h2) {
             // println!("SEEN");
             return 1;
         } else {
-            seen1.insert(player1.clone());
-            seen2.insert(player2.clone());
+            seen1.insert(h1);
+            seen2.insert(h2);
         }
 
         player1.pop_front();
@@ -98,7 +103,7 @@ fn solve2(
             p2_copy.drain(p2..);
             // println!("drained >{:?} {:?}", p1_copy, p2_copy);
 
-            if solve2(&mut p1_copy, &mut p2_copy, depth) == 1 {
+            if solve2(&mut p1_copy, &mut p2_copy) == 1 {
                 player1.push_back(p1);
                 player1.push_back(p2);
             } else {
@@ -139,13 +144,11 @@ pub fn part2(inputs: &Players) -> usize {
     let mut player1 = player1.clone();
     let mut player2 = player2.clone();
 
-    let ans = solve2(&mut player1, &mut player2, &mut 0);
+    let ans = solve2(&mut player1, &mut player2);
 
     // println!("{} {:?} {:?}", ans, player1, player2);
 
-    let player = if ans == 1 { player1 } else { player2 };
-
-    player
+    if ans == 1 { player1 } else { player2 }
         .iter()
         .copied()
         .rev()
