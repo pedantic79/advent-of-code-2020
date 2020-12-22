@@ -36,28 +36,25 @@ pub fn part1(inputs: &Players) -> usize {
     let mut player2 = player2.clone();
 
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
-        match p1.cmp(&p2) {
-            Less => {
-                player2.push_back(p2);
-                player2.push_back(p1);
-            }
-            Equal => {
-                panic!("What happens when they're equal")
-            }
-            Greater => {
-                player1.push_back(p1);
-                player1.push_back(p2);
-            }
-        }
         player1.pop_front();
         player2.pop_front();
+
+        let result = match p1.cmp(&p2) {
+            Less => false,
+            Equal => panic!("What happens when they're equal"),
+            Greater => true,
+        };
+
+        if result {
+            player1.push_back(p1);
+            player1.push_back(p2);
+        } else {
+            player2.push_back(p2);
+            player2.push_back(p1);
+        }
     }
 
-    // println!("{:?} {:?}", player1, player2);
-
-    let player = if player1.is_empty() { player2 } else { player1 };
-
-    player
+    if player1.is_empty() { player2 } else { player1 }
         .iter()
         .copied()
         .rev()
@@ -70,22 +67,11 @@ fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize
     let mut seen1 = HashSet::new();
     let mut seen2 = HashSet::new();
 
-    // println!(
-    //     "Start of new game {:?} {:?} {} {}",
-    //     player1,
-    //     player2,
-    //     seen1.len(),
-    //     seen2.len()
-    // );
-
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
-        // println!("* {:?} {:?}", player1, player2);
-
         let h1 = get_hash(&player1);
         let h2 = get_hash(&player2);
 
         if seen1.contains(&h1) && seen2.contains(&h2) {
-            // println!("SEEN");
             return 1;
         } else {
             seen1.insert(h1);
@@ -95,41 +81,31 @@ fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize
         player1.pop_front();
         player2.pop_front();
 
-        if p1 <= player1.len() && p2 <= player2.len() {
+        let result = if p1 <= player1.len() && p2 <= player2.len() {
             let mut p1_copy = player1.clone();
             let mut p2_copy = player2.clone();
-            // println!("draining: {}.., {}..", p1, p2);
+
             p1_copy.drain(p1..);
             p2_copy.drain(p2..);
-            // println!("drained >{:?} {:?}", p1_copy, p2_copy);
 
-            if solve2(&mut p1_copy, &mut p2_copy) == 1 {
-                player1.push_back(p1);
-                player1.push_back(p2);
-            } else {
-                player2.push_back(p2);
-                player2.push_back(p1);
-            }
+            solve2(&mut p1_copy, &mut p2_copy) == 1
         } else {
-            // println!("{} {:?} {} {:?}", p1, player1, p2, player2);
-
             match p1.cmp(&p2) {
-                Less => {
-                    player2.push_back(p2);
-                    player2.push_back(p1);
-                }
-                Equal => {
-                    panic!("What happens when they're equal")
-                }
-                Greater => {
-                    player1.push_back(p1);
-                    player1.push_back(p2);
-                }
+                Less => false,
+                Equal => panic!("What happens when they're equal"),
+                Greater => true,
             }
+        };
+
+        if result {
+            player1.push_back(p1);
+            player1.push_back(p2);
+        } else {
+            player2.push_back(p2);
+            player2.push_back(p1);
         }
     }
 
-    // dbg!(if player1.is_empty() { 2 } else { 1 })
     if player1.is_empty() {
         2
     } else {
@@ -145,8 +121,6 @@ pub fn part2(inputs: &Players) -> usize {
     let mut player2 = player2.clone();
 
     let ans = solve2(&mut player1, &mut player2);
-
-    // println!("{} {:?} {:?}", ans, player1, player2);
 
     if ans == 1 { player1 } else { player2 }
         .iter()
@@ -177,9 +151,9 @@ Player 2:
 
     #[test]
     pub fn test_input() {
-        println!("{:?}", generator(SAMPLE));
-
-        // assert_eq!(generator(SAMPLE), Players());
+        let p1 = [9, 2, 6, 3, 1].iter().copied().collect();
+        let p2 = [5, 8, 4, 7, 10].iter().copied().collect();
+        assert_eq!(generator(SAMPLE), Players(p1, p2));
     }
 
     #[test]
