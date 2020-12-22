@@ -1,15 +1,17 @@
 use std::{
-    cmp::Ordering::{Equal, Greater, Less},
-    collections::{hash_map::DefaultHasher, HashSet, VecDeque},
+    cmp::Ordering,
+    collections::{hash_map::DefaultHasher, VecDeque},
     hash::{Hash, Hasher},
 };
+
+use nohash_hasher::IntSet;
 
 #[derive(Debug, PartialEq)]
 pub struct Players(VecDeque<usize>, VecDeque<usize>);
 
 fn parse_player(input: &str) -> VecDeque<usize> {
     let mut line = input.lines();
-    line.next();
+    assert!(line.next().unwrap().starts_with("Player "));
     line.map(|l| l.parse().unwrap()).collect()
 }
 
@@ -40,9 +42,9 @@ pub fn part1(inputs: &Players) -> usize {
         player2.pop_front();
 
         let result = match p1.cmp(&p2) {
-            Less => false,
-            Equal => panic!("What happens when they're equal"),
-            Greater => true,
+            Ordering::Less => false,
+            Ordering::Equal => panic!("cards"),
+            Ordering::Greater => true,
         };
 
         if result {
@@ -64,19 +66,16 @@ pub fn part1(inputs: &Players) -> usize {
 }
 
 fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize {
-    let mut seen1 = HashSet::new();
-    let mut seen2 = HashSet::new();
+    let mut seen1 = IntSet::default();
+    // let mut seen2 = IntSet::default();
 
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
-        let h1 = get_hash(&player1);
-        let h2 = get_hash(&player2);
-
-        if seen1.contains(&h1) && seen2.contains(&h2) {
+        if !seen1.insert(get_hash(&player1)) {
             return 1;
-        } else {
-            seen1.insert(h1);
-            seen2.insert(h2);
         }
+        // if !seen1.insert(get_hash(&player1)) && !seen2.insert(get_hash(&player2)) {
+        //     return 1;
+        // }
 
         player1.pop_front();
         player2.pop_front();
@@ -91,9 +90,9 @@ fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize
             solve2(&mut p1_copy, &mut p2_copy) == 1
         } else {
             match p1.cmp(&p2) {
-                Less => false,
-                Equal => panic!("What happens when they're equal"),
-                Greater => true,
+                Ordering::Less => false,
+                Ordering::Equal => panic!("cards equal"),
+                Ordering::Greater => true,
             }
         };
 
