@@ -60,8 +60,8 @@ pub fn part1(inputs: &Players) -> usize {
         .iter()
         .copied()
         .rev()
-        .enumerate()
-        .map(|(i, n)| (i + 1) * n)
+        .zip(1..)
+        .map(|(n, i)| i * n)
         .sum()
 }
 
@@ -69,10 +69,15 @@ fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize
     let mut seen1 = IntSet::default();
     // let mut seen2 = IntSet::default();
 
+    let mut loop_count = 0;
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
-        if !seen1.insert(get_hash(&player1)) {
+        // Repeated occurance optimization. Hashing is quite expensive, so we
+        // try to avoid hashing every time through.
+        if loop_count % 4 == 0 && !seen1.insert(get_hash(&player1)) {
             return 1;
         }
+        loop_count += 1;
+
         // if !seen1.insert(get_hash(&player1)) && !seen2.insert(get_hash(&player2)) {
         //     return 1;
         // }
@@ -84,8 +89,8 @@ fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize
             let mut p1_copy = player1.clone();
             let mut p2_copy = player2.clone();
 
-            p1_copy.drain(p1..);
-            p2_copy.drain(p2..);
+            p1_copy.truncate(p1);
+            p2_copy.truncate(p2);
 
             solve2(&mut p1_copy, &mut p2_copy) == 1
         } else {
@@ -125,8 +130,8 @@ pub fn part2(inputs: &Players) -> usize {
         .iter()
         .copied()
         .rev()
-        .enumerate()
-        .map(|(i, n)| (i + 1) * n)
+        .zip(1..)
+        .map(|(n, i)| i * n)
         .sum()
 }
 
