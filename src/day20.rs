@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
+
 // const SEA_MONSTER: [&[u8]; 3] = [
 //     b"                  # ",
 //     b"#    ##    ##    ###",
@@ -40,72 +42,6 @@ impl Dir {
     }
 }
 
-fn rotate_right<T, A>(a: &mut [A])
-where
-    T: Default + Copy,
-    A: AsMut<[T]>,
-{
-    let len = a.len();
-    for i in 0..(len / 2) {
-        for j in i..(len - i - 1) {
-            let temp = a[i].as_mut()[j];
-            a[i].as_mut()[j] = a[len - 1 - j].as_mut()[i];
-            a[len - 1 - j].as_mut()[i] = a[len - 1 - i].as_mut()[len - 1 - j];
-            a[len - 1 - i].as_mut()[len - 1 - j] = a[j].as_mut()[len - 1 - i];
-            a[j].as_mut()[len - 1 - i] = temp;
-        }
-    }
-}
-
-fn rotate_left<T, A>(a: &mut [A])
-where
-    T: Default + Copy,
-    A: AsMut<[T]>,
-{
-    let len = a.len();
-    for i in 0..(len / 2) {
-        for j in i..(len - i - 1) {
-            let temp = a[i].as_mut()[j];
-            a[i].as_mut()[j] = a[j].as_mut()[len - 1 - i];
-            a[j].as_mut()[len - 1 - i] = a[len - 1 - i].as_mut()[len - 1 - j];
-            a[len - 1 - i].as_mut()[len - 1 - j] = a[len - 1 - j].as_mut()[i];
-            a[len - 1 - j].as_mut()[i] = temp;
-        }
-    }
-}
-
-fn rotate_bottom<T, A>(a: &mut [A])
-where
-    T: Default + Copy,
-    A: AsMut<[T]>,
-{
-    let len = a.len();
-
-    if len % 2 == 1 {
-        for j in 0..(len / 2) {
-            a[len / 2].as_mut().swap(j, len - j - 1);
-        }
-    }
-
-    for i in 0..(len / 2) {
-        for j in 0..len {
-            let temp = a[i].as_mut()[j];
-            a[i].as_mut()[j] = a[len - i - 1].as_mut()[len - j - 1];
-            a[len - i - 1].as_mut()[len - j - 1] = temp;
-        }
-    }
-}
-
-fn flip<T, A>(a: &mut [A])
-where
-    T: Default + Copy,
-    A: AsMut<[T]>,
-{
-    for row in a.iter_mut() {
-        row.as_mut().reverse();
-    }
-}
-
 fn sea_monster_chksum(r1: &[u8], r2: &[u8], r3: &[u8]) -> u64 {
     let mut num = 0;
 
@@ -143,6 +79,62 @@ where
     }
 
     count
+}
+
+#[allow(dead_code)]
+fn print_full_grid(mosiac: &[Vec<Option<ModifiedTile<'_>>>]) {
+    let l = mosiac.len();
+    let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
+
+    for (r, m_row) in mosiac.iter().enumerate() {
+        for (c, cell) in m_row.iter().enumerate() {
+            let r_offset = r * 10;
+            let c_offset = c * 10;
+            let map = cell.as_ref().unwrap().symbols_debug();
+
+            for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
+                .iter_mut()
+                .zip(map.iter())
+            {
+                row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
+            }
+        }
+    }
+
+    println!();
+    print_grid(&full_grid, 10, true);
+}
+
+fn print_grid(grid: &[Vec<u8>], size: usize, debug: bool) {
+    let l = grid.len();
+    let mut each = l / 10;
+    each += match each {
+        9 => 3,
+        2 => 1,
+        _ => 0,
+    };
+
+    if !debug {
+        for row in grid.iter() {
+            println!("{}", row.iter().map(|x| *x as char).collect::<String>());
+        }
+    } else {
+        for (r, row) in grid.iter().enumerate() {
+            if r % size == 0 {
+                println!(
+                    "{}",
+                    std::iter::repeat('-')
+                        .take(each * (size + 3))
+                        .collect::<String>()
+                );
+            }
+
+            for sec in row.chunks(size).map(|x| std::str::from_utf8(x).unwrap()) {
+                print!(" {} |", sec);
+            }
+            println!();
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -480,41 +472,7 @@ pub fn part2(tiles: &[Tile]) -> usize {
         tiles.iter().map(|x| x.id).collect::<HashSet<_>>()
     );
 
-    {
-        // let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
-
-        // for (r, m_row) in mosiac.iter().enumerate() {
-        //     for (c, cell) in m_row.iter().enumerate() {
-        //         let r_offset = r * 10;
-        //         let c_offset = c * 10;
-        //         let map = cell.as_ref().unwrap().symbols_debug();
-
-        //         for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
-        //             .iter_mut()
-        //             .zip(map.iter())
-        //         {
-        //             row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
-        //         }
-        //     }
-        // }
-
-        // println!();
-        // for (r, row) in full_grid.iter().enumerate() {
-        //     if r % 10 == 0 {
-        //         println!(
-        //             "{}",
-        //             std::iter::repeat('-')
-        //                 .take(full_grid.len() + full_grid.len() / 10)
-        //                 .collect::<String>()
-        //         );
-        //     }
-
-        //     for sec in row.chunks(10).map(|x| std::str::from_utf8(x).unwrap()) {
-        //         print!("{}|", sec);
-        //     }
-        //     println!();
-        // }
-    }
+    // print_full_grid(&mosiac);
 
     let mut grid = vec![vec![b'.'; l * 8]; l * 8];
 
@@ -538,27 +496,8 @@ pub fn part2(tiles: &[Tile]) -> usize {
                 count += check_sea_monster(rows);
             }
             if count > 0 {
-                //     if false {
-                //         for row in grid.iter() {
-                //             println!("{}", row.iter().map(|x| *x as char).collect::<String>());
-                //         }
-                //     } else {
-                //         for (r, row) in grid.iter().enumerate() {
-                //             if r % 8 == 0 {
-                //                 println!(
-                //                     "{}",
-                //                     std::iter::repeat('-').take(l * 11).collect::<String>()
-                //                 );
-                //             }
-
-                //             for sec in row.chunks(8).map(|x| std::str::from_utf8(x).unwrap()) {
-                //                 print!(" {} |", sec);
-                //             }
-                //             println!();
-                //         }
-                //     }
-
-                //     println!("count: {}", count);
+                // print_grid(&grid, 8, true);
+                // println!("count: {}", count);
                 break;
             }
 
