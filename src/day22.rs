@@ -1,10 +1,10 @@
 use std::{
     cmp::Ordering,
-    collections::{hash_map::DefaultHasher, VecDeque},
+    collections::{hash_map::DefaultHasher, HashSet, VecDeque},
     hash::{Hash, Hasher},
 };
 
-use nohash_hasher::IntSet;
+use nohash_hasher::BuildNoHashHasher;
 
 #[derive(Debug, PartialEq)]
 pub struct Players(VecDeque<usize>, VecDeque<usize>);
@@ -66,8 +66,10 @@ pub fn part1(inputs: &Players) -> usize {
 }
 
 fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize {
-    let mut seen1 = IntSet::default();
+    // let mut seen1 = IntSet::default();
     // let mut seen2 = IntSet::default();
+
+    let mut seen1 = HashSet::with_capacity_and_hasher(128, BuildNoHashHasher::<u64>::default());
 
     let mut loop_count = 0;
     while let (Some(&p1), Some(&p2)) = (player1.front(), player2.front()) {
@@ -125,6 +127,7 @@ pub fn part2(inputs: &Players) -> usize {
     let mut player2 = player2.clone();
 
     let ans = solve2(&mut player1, &mut player2);
+    println!("{:?}", ans);
 
     if ans == 1 { player1 } else { player2 }
         .iter()
