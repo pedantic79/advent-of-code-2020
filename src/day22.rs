@@ -21,6 +21,10 @@ fn get_hash<T: Hash>(deque: &T) -> u64 {
     hasher.finish()
 }
 
+fn calculate_score(player: VecDeque<usize>) -> usize {
+    player.into_iter().rev().zip(1..).map(|(n, i)| i * n).sum()
+}
+
 #[aoc_generator(day22)]
 pub fn generator(input: &str) -> Players {
     let mut section = input.split("\n\n");
@@ -56,13 +60,7 @@ pub fn part1(inputs: &Players) -> usize {
         }
     }
 
-    if player1.is_empty() { player2 } else { player1 }
-        .iter()
-        .copied()
-        .rev()
-        .zip(1..)
-        .map(|(n, i)| i * n)
-        .sum()
+    calculate_score(if player1.is_empty() { player2 } else { player1 })
 }
 
 fn solve2(player1: &mut VecDeque<usize>, player2: &mut VecDeque<usize>) -> usize {
@@ -127,15 +125,7 @@ pub fn part2(inputs: &Players) -> usize {
     let mut player2 = player2.clone();
 
     let ans = solve2(&mut player1, &mut player2);
-    println!("{:?}", ans);
-
-    if ans == 1 { player1 } else { player2 }
-        .iter()
-        .copied()
-        .rev()
-        .zip(1..)
-        .map(|(n, i)| i * n)
-        .sum()
+    calculate_score(if ans == 1 { player1 } else { player2 })
 }
 
 #[cfg(test)]
