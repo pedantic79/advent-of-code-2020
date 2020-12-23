@@ -36,12 +36,16 @@ pub fn part1(inputs: &[usize]) -> String {
 
         if mv == 100 {
             let current_pos = cups.iter().position(|&x| x == 1).unwrap();
-            cups.rotate_left(current_pos);
+            // cups.rotate_left(current_pos);
 
-            return cups[1..]
-                .iter()
-                .map(|&d| std::char::from_digit(d as u32, 10).unwrap())
-                .collect();
+            let mut output = String::new();
+
+            for i in 1..len {
+                output
+                    .push(std::char::from_digit(cups[(current_pos + i) % len] as u32, 10).unwrap());
+            }
+
+            return output;
         }
 
         if pos + 4 > len {
@@ -98,7 +102,7 @@ pub fn part1(inputs: &[usize]) -> String {
 
 #[aoc(day23, part2)]
 pub fn part2(inputs: &[usize]) -> String {
-    let len = 1_000_000;
+    const LEN: usize = 1_000_000;
     let mut cups = inputs
         .iter()
         .copied()
@@ -121,7 +125,7 @@ pub fn part2(inputs: &[usize]) -> String {
             // println!("searching for {}", l);
             let l_pos = cups.iter().position(|&x| x == l).unwrap();
 
-            last = Some(cups[(l_pos + 1) % len]);
+            last = Some(cups[(l_pos + 1) % LEN]);
             (l_pos + 1, last.unwrap())
         } else {
             last = Some(cups[0]);
@@ -132,12 +136,14 @@ pub fn part2(inputs: &[usize]) -> String {
 
         if mv == 10_000_000 {
             let current_pos = cups.iter().position(|&x| x == 1).unwrap();
-            cups.rotate_left(current_pos);
 
-            return cups[1].to_string() + &cups[2].to_string();
+            let mut output = String::new();
+            output.push_str(&cups[(current_pos + 1) % LEN].to_string());
+
+            return output;
         }
 
-        if pos + 4 > len {
+        if pos + 4 > LEN {
             cups.rotate_left(4);
             pos -= 4;
         }
@@ -154,14 +160,14 @@ pub fn part2(inputs: &[usize]) -> String {
 
         let mut dest = current - 1;
         if dest == 0 {
-            dest = len;
+            dest = LEN;
         }
 
         while three_cups.contains(&dest) {
             dest -= 1;
 
             if dest == 0 {
-                dest = len;
+                dest = LEN;
             }
         }
         // println!("destination: {}", dest);
