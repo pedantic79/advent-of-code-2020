@@ -28,17 +28,17 @@ fn print(start: usize, ring: &HashMap<usize, usize>) -> String {
     output
 }
 
-fn solve(ring: &mut HashMap<usize, usize>, mut current: usize, iteratations: usize) {
-    let len = ring.len();
+fn solve(ring: &mut Vec<usize>, mut current: usize, iteratations: usize) {
+    let len = ring.len() - 1;
 
     for _mv in 0..iteratations {
         // println!("\n-- move {} --", _mv + 1);
         // println!("cups {}", print(current, &ring));
 
         let mut three_cups = [0; 3];
-        three_cups[0] = ring[&current];
-        three_cups[1] = ring[&three_cups[0]];
-        three_cups[2] = ring[&three_cups[1]];
+        three_cups[0] = ring[current];
+        three_cups[1] = ring[three_cups[0]];
+        three_cups[2] = ring[three_cups[1]];
         // println!("picks up: {:?}", three_cups);
 
         let mut dest = current - 1;
@@ -55,33 +55,33 @@ fn solve(ring: &mut HashMap<usize, usize>, mut current: usize, iteratations: usi
         }
         // println!("destination: {}", dest);
 
-        let next_current = ring[&three_cups[2]];
-        let dest_next = ring[&dest];
+        let next_current = ring[three_cups[2]];
+        let dest_next = ring[dest];
+        ring[current] = next_current;
+        ring[dest] = three_cups[0];
+        ring[three_cups[2]] = dest_next;
 
-        ring.insert(current, next_current);
-        ring.insert(dest, three_cups[0]);
-        ring.insert(three_cups[2], dest_next);
         current = next_current;
     }
 }
 
 #[aoc(day23, part1)]
 pub fn part1(inputs: &[usize]) -> String {
-    let mut ring = HashMap::new();
+    let mut ring = vec![0; inputs.len() + 1];
 
     for w in inputs.windows(2) {
-        ring.insert(w[0], w[1]);
+        ring[w[0]] = w[1];
     }
-    ring.insert(inputs[inputs.len() - 1], inputs[0]);
+    ring[inputs[inputs.len() - 1]] = inputs[0];
 
     solve(&mut ring, inputs[0], 100);
 
     let mut output = String::new();
 
-    let mut current_pos = ring[&1];
+    let mut current_pos = ring[1];
     while current_pos != 1 {
         output.push(std::char::from_digit(current_pos as u32, 10).unwrap());
-        current_pos = ring[&current_pos];
+        current_pos = ring[current_pos];
     }
 
     output
@@ -90,22 +90,22 @@ pub fn part1(inputs: &[usize]) -> String {
 #[aoc(day23, part2)]
 pub fn part2(inputs: &[usize]) -> usize {
     const LEN: usize = 1_000_000;
-    let mut ring = HashMap::new();
+    let mut ring = vec![0; LEN + 1];
 
     for w in inputs.windows(2) {
-        ring.insert(w[0], w[1]);
+        ring[w[0]] = w[1];
     }
-    ring.insert(inputs[inputs.len() - 1], 10);
-    ring.insert(LEN, inputs[0]);
 
-    for i in 10..LEN {
-        ring.insert(i, i + 1);
+    ring[inputs[inputs.len() - 1]] = 10;
+    for (i, r) in ring.iter_mut().enumerate().skip(10) {
+        *r = i + 1;
     }
+    ring[LEN] = inputs[0];
 
     solve(&mut ring, inputs[0], 10_000_000);
 
-    let a = ring[&1];
-    let b = ring[&a];
+    let a = ring[1];
+    let b = ring[a];
 
     a * b
 }
