@@ -10,30 +10,16 @@ use std::{
 pub struct Coord(i32, i32);
 
 impl Coord {
-    #[allow(dead_code)]
     fn neighbors(&self) -> [Coord; 6] {
+        const NEIGHBORS: [(i32, i32); 6] = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)];
         let mut ans = [*self; 6];
 
-        for (i, [x, y]) in [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]
-            .iter()
-            .enumerate()
-        {
-            ans[i].0 += x;
-            ans[i].1 += y;
+        for (a, &(x, y)) in ans.iter_mut().zip(NEIGHBORS.iter()) {
+            a.0 += x;
+            a.1 += y;
         }
 
         ans
-    }
-
-    fn neighbors2(&self) -> impl IntoIterator<Item = Self> + '_ {
-        const NEIGHBORS: [[i32; 2]; 6] = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
-
-        NEIGHBORS.iter().map(move |[x, y]| {
-            let mut ans = *self;
-            ans.0 += x;
-            ans.1 += y;
-            ans
-        })
     }
 }
 
@@ -76,7 +62,7 @@ fn tick(black_tiles: HashSet<Coord>) -> HashSet<Coord> {
     let mut counts = HashMap::with_capacity(black_tiles.len() * 6);
 
     for coord in black_tiles.iter() {
-        for neighbor in coord.neighbors2() {
+        for neighbor in coord.neighbors().iter().copied() {
             *counts.entry(neighbor).or_insert(0) += 1;
         }
     }
