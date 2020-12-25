@@ -1,64 +1,86 @@
-use std::{
-    collections::{HashMap, HashSet},
-    str::FromStr,
+use nom::{
+    branch::alt, bytes::complete::tag, combinator::all_consuming, multi::fold_many1, IResult,
 };
+
+use std::collections::{HashMap, HashSet};
 
 //       (-1, 1) (0, 1) (1, 1)
 //   (-1, 0) (0, 0) (1, 0)
 //       (0, -1) (1, -1)
+
+//       (0, 1) (1, 1)
+//   (-1, 0) (0, 0) (1, 0)
+//      (-1, -1) (0, -1)
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub struct Coord(i32, i32);
+pub struct HexCoord(i32, i32);
 
-impl Coord {
-    fn neighbors(&self) -> [Coord; 6] {
-        const NEIGHBORS: [(i32, i32); 6] = [(1, 0), (1, -1), (0, -1), (-1, 0), (-1, 1), (0, 1)];
-        let mut ans = [*self; 6];
+impl HexCoord {
+    fn neighbors(&self) -> [HexCoord; 6] {
+        [
+            self.nw(),
+            self.ne(),
+            self.e(),
+            self.se(),
+            self.sw(),
+            self.w(),
+        ]
+    }
 
-        for (a, &(x, y)) in ans.iter_mut().zip(NEIGHBORS.iter()) {
-            a.0 += x;
-            a.1 += y;
-        }
+    fn ne(&self) -> Self {
+        Self(self.0 + 1, self.1 + 1)
+    }
 
-        ans
+    fn nw(&self) -> Self {
+        Self(self.0, self.1 + 1)
+    }
+
+    fn se(&self) -> Self {
+        Self(self.0, self.1 - 1)
+    }
+
+    fn sw(&self) -> Self {
+        Self(self.0 - 1, self.1 - 1)
+    }
+
+    fn e(&self) -> Self {
+        Self(self.0 + 1, self.1)
+    }
+
+    fn w(&self) -> Self {
+        Self(self.0 - 1, self.1)
+    }
+
+    fn directions(input: &str) -> IResult<&str, Self> {
+        all_consuming(fold_many1(
+            alt((
+                tag("ne"),
+                tag("nw"),
+                tag("se"),
+                tag("sw"),
+                tag("e"),
+                tag("w"),
+            )),
+            Self(0, 0),
+            |current, s| match s {
+                "ne" => current.ne(),
+                "nw" => current.nw(),
+                "se" => current.se(),
+                "sw" => current.sw(),
+                "e" => current.e(),
+                "w" => current.w(),
+                _ => unreachable!(),
+            },
+        ))(input)
     }
 }
 
-impl FromStr for Coord {
-    type Err = &'static str;
-
-    fn from_str(line: &str) -> Result<Self, Self::Err> {
-        let mut current = Coord(0, 0);
-
-        let mut it = line.bytes();
-        while let Some(c) = it.next() {
-            match c {
-                b'e' => current.0 += 1,
-                b'w' => current.0 -= 1,
-                b'n' => match it.next().unwrap() {
-                    b'e' => current.1 += 1,
-                    b'w' => {
-                        current.1 += 1;
-                        current.0 -= 1;
-                    }
-                    _ => return Err("unknown symbol n_"),
-                },
-                b's' => match it.next().unwrap() {
-                    b'e' => {
-                        current.1 -= 1;
-                        current.0 += 1;
-                    }
-                    b'w' => current.1 -= 1,
-                    _ => return Err("unknown symbol s_"),
-                },
-                _ => return Err("unknown symbol _"),
-            }
-        }
-
-        Ok(current)
+impl From<&str> for HexCoord {
+    fn from(s: &str) -> Self {
+        Self::directions(s).unwrap().1
     }
 }
 
-fn tick(black_tiles: HashSet<Coord>) -> HashSet<Coord> {
+fn tick(black_tiles: HashSet<HexCoord>) -> HashSet<HexCoord> {
     let mut counts = HashMap::with_capacity(black_tiles.len() * 6);
 
     for coord in black_tiles.iter() {
@@ -82,13 +104,11 @@ fn tick(black_tiles: HashSet<Coord>) -> HashSet<Coord> {
 }
 
 #[aoc_generator(day24)]
-pub fn generator(input: &str) -> HashSet<Coord> {
-    let len = input.lines().count();
-
+pub fn generator(input: &str) -> HashSet<HexCoord> {
     let counts = input
         .lines()
-        .map(|line| Coord::from_str(line).unwrap())
-        .fold(HashMap::with_capacity(len), |mut hm, coord| {
+        .map(HexCoord::from)
+        .fold(HashMap::new(), |mut hm, coord| {
             *hm.entry(coord).or_insert(0) += 1;
             hm
         });
@@ -108,12 +128,12 @@ pub fn generator(input: &str) -> HashSet<Coord> {
 }
 
 #[aoc(day24, part1)]
-pub fn part1(inputs: &HashSet<Coord>) -> usize {
+pub fn part1(inputs: &HashSet<HexCoord>) -> usize {
     inputs.len()
 }
 
 #[aoc(day24, part2)]
-pub fn part2(inputs: &HashSet<Coord>) -> usize {
+pub fn part2(inputs: &HashSet<HexCoord>) -> usize {
     let mut state = inputs.clone();
 
     for _ in 0..100 {
