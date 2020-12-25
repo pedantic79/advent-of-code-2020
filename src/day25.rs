@@ -11,34 +11,28 @@ pub fn generator(input: &str) -> (u64, u64) {
     )
 }
 
-fn loop_size(target: u64) -> usize {
-    let subject = 7;
+const MOD: u64 = 20_201_227;
+
+fn loop_size(target: u64) -> u64 {
+    const SUBJECT: u64 = 7;
     let mut count = 0;
     let mut value = 1;
 
     while target != value {
         count += 1;
-        value *= subject;
-        value %= 20201227;
+        value = (value * SUBJECT) % MOD;
     }
 
     count
 }
 
-fn encryption_key(public_key: u64, loop_count: usize) -> u64 {
-    let mut value = 1;
-
-    for _ in 0..loop_count {
-        value *= public_key;
-        value %= 20201227;
-    }
-
-    value
+fn encryption_key(public_key: u64, loop_count: u64) -> u64 {
+    crate::mod_pow(public_key, loop_count, MOD)
 }
 
 #[aoc(day25, part1)]
 pub fn part1((card, door): &(u64, u64)) -> u64 {
-    encryption_key(*card, loop_size(*door))
+    encryption_key(*door, loop_size(*card))
 }
 
 // #[aoc(day25, part2)]
