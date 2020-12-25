@@ -62,4 +62,23 @@ pub fn mod_inv_unsigned<U: num::Num + PartialOrd + Copy + num::One + num::ToPrim
     U::one()
 }
 
+pub fn mod_pow<T>(mut base: T, mut exp: T, modulus: T) -> T
+where
+    T: num::Num + Copy + std::ops::Shr<Output = T> + From<u8> + PartialOrd,
+{
+    if modulus == T::one() {
+        return T::zero();
+    }
+    let mut result = T::one();
+    base = base % modulus;
+    while exp > T::zero() {
+        if exp % 2.into() == T::one() {
+            result = result * base % modulus;
+        }
+        exp = exp >> T::one();
+        base = base * base % modulus
+    }
+    result
+}
+
 aoc_lib! { year = 2020 }
