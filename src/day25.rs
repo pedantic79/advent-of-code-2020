@@ -1,6 +1,3 @@
-#[derive(Debug, PartialEq)]
-pub struct Object {}
-
 #[aoc_generator(day25)]
 pub fn generator(input: &str) -> (u64, u64) {
     let mut iter = input.lines();
@@ -58,10 +55,10 @@ mod tests {
         assert_eq!(part1(&generator(SAMPLE)), 14897079);
     }
 
-    #[test]
-    pub fn test2() {
-        // assert_eq!(part2(&generator(SAMPLE)), 336);
-    }
+    // #[test]
+    // pub fn test2() {
+    //     assert_eq!(part2(&generator(SAMPLE)), 336);
+    // }
 
     mod regression {
         use super::*;
