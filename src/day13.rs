@@ -103,21 +103,15 @@ pub fn part2(schedule: &BusSchedule) -> usize {
 
 #[aoc(day13, part2, crt)]
 pub fn part2_crt(schedule: &BusSchedule) -> usize {
-    let product = schedule
-        .ids
-        .iter()
-        .map(|bl| if let BusLine::ID(x) = bl { *x } else { 1 })
-        .product::<usize>();
-
-    let mut sum = 0;
-    for (i, bl) in schedule.ids.iter().enumerate() {
-        if let BusLine::ID(m) = bl {
-            let a = product / m;
-            let y = crate::mod_inv_unsigned(a, *m);
-            sum += (m - i) * a * y;
-        }
-    }
-    sum % product
+    crate::chinese_remainder_theorem(schedule.ids.iter().enumerate().filter_map(
+        |(idx, bus_line)| {
+            if let BusLine::ID(bl) = bus_line {
+                Some((bl - idx, *bl))
+            } else {
+                None
+            }
+        },
+    ))
 }
 
 #[aoc(day13, part2, brute)]

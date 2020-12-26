@@ -43,42 +43,120 @@ trait MinMaxIterator: Iterator {
 
 impl<T: ?Sized> MinMaxIterator for T where T: Iterator {}
 
-pub fn mod_inv<T: num::Integer + Clone>(a: T, m: T) -> T {
-    a.extended_gcd(&m).x
-}
-
-pub fn mod_inv_unsigned<U: num::Num + PartialOrd + Copy + num::One + num::ToPrimitive>(
-    a: U,
-    m: U,
-) -> U {
-    let a = a % m;
-
-    for x in num::iter::range(U::one(), m) {
-        if (a * x) % m == U::one() {
-            return x;
-        }
+#[inline]
+pub fn mod_inv<U>(mut a: U, mut m: U) -> U
+where
+    U: num::Integer + Clone,
+{
+    if m <= U::one() {
+        return U::zero();
     }
 
-    U::one()
+    let m0 = m.clone();
+    let mut x0 = (U::zero(), false);
+    let mut x1 = (U::one(), false);
+
+    while a > U::one() {
+        if m == U::zero() {
+            return U::zero();
+        }
+
+        let q = a.clone() / m.clone();
+        let t = m.clone();
+        m = a % m;
+        a = t;
+
+        let t2 = x0.clone();
+        let qx0 = q * x0.0;
+
+        if x0.1 != x1.1 {
+            x0 = (x1.0 + qx0, x1.1);
+        } else {
+            x0 = if x1.0 > qx0 {
+                (x1.0 - qx0, x1.1)
+            } else {
+                (qx0 - x1.0, !x0.1)
+            };
+        }
+
+        x1 = t2;
+    }
+
+    if x1.1 {
+        m0 - x1.0
+    } else {
+        x1.0
+    }
 }
 
 pub fn mod_pow<T>(mut base: T, mut exp: T, modulus: T) -> T
 where
-    T: num::Num + Copy + std::ops::Shr<Output = T> + From<u8> + PartialOrd,
+    T: num::Integer + Clone,
 {
     if modulus == T::one() {
         return T::zero();
     }
+
     let mut result = T::one();
-    base = base % modulus;
+    base = base % modulus.clone();
     while exp > T::zero() {
-        if exp % 2.into() == T::one() {
-            result = result * base % modulus;
+        if exp.is_odd() {
+            result = result * base.clone() % modulus.clone();
         }
-        exp = exp >> T::one();
-        base = base * base % modulus
+
+        exp = exp / (T::one() + T::one());
+        base = base.clone() * base % modulus.clone()
     }
     result
+}
+
+pub fn baby_step_giant_step<I>(modulo: I, base: I, target: I) -> Option<I>
+where
+    I: num::Integer + Clone + num::integer::Roots + num::ToPrimitive + std::hash::Hash,
+{
+    let m = num::integer::sqrt(modulo.clone());
+
+    let precomp = num::range(I::zero(), m.clone())
+        .map(|j| (crate::mod_pow(base.clone(), j.clone(), modulo.clone()), j))
+        .collect::<std::collections::HashMap<_, _>>();
+
+    let invgenerator = crate::mod_inv(
+        crate::mod_pow(base, m.clone(), modulo.clone()),
+        modulo.clone(),
+    );
+    let mut value = target;
+
+    for i in num::range(I::zero(), m.clone()) {
+        if let Some(v) = precomp.get(&value) {
+            return Some(i * m + v.clone());
+        }
+
+        value = value * invgenerator.clone() % modulo.clone();
+    }
+
+    None
+}
+
+pub fn chinese_remainder_theorem<T, I>(inputs: I) -> T
+where
+    T: num::Integer + Clone,
+    I: Iterator<Item = (T, T)> + Clone,
+{
+    let mut product = T::one();
+
+    for n in inputs.clone() {
+        product = product * n.1;
+    }
+
+    let mut sum = T::zero();
+    for (x, m) in inputs {
+        let a = product.clone() / m.clone();
+        let y = crate::mod_inv(a.clone(), m.clone());
+
+        sum = sum + x * a * y;
+    }
+
+    sum % product
 }
 
 aoc_lib! { year = 2020 }
