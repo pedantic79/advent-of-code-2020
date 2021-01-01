@@ -134,14 +134,14 @@ mod tests {
     #[test]
     // #[ignore]
     pub fn test2() {
-        assert_eq!(part2(&generator(SAMPLE)), 149245887792);
+        assert_eq!(part2(&generator(SAMPLE)), 149_245_887_792);
     }
 
     mod regression {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day23.txt");
-        const ANSWERS: (&str, u64) = ("32658947", 683486010900);
+        const ANSWERS: (&str, u64) = ("32658947", 683_486_010_900);
 
         #[test]
         // #[ignore]

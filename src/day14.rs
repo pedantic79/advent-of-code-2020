@@ -263,7 +263,7 @@ mem[26] = 1";
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day14.txt");
-        const ANSWERS: (usize, usize) = (6386593869035, 4288986482164);
+        const ANSWERS: (usize, usize) = (6_386_593_869_035, 4_288_986_482_164);
 
         #[test]
         pub fn test() {

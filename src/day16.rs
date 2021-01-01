@@ -205,7 +205,7 @@ nearby tickets:
     #[test]
     pub fn test2() {
         let mut rules = generator(SAMPLE2);
-        rules.important = (0..=2usize).collect();
+        rules.important = (0..=2_usize).collect();
 
         assert_eq!(part2_solve(&rules), vec![(1, 12), (0, 11), (2, 13)]);
     }
@@ -214,7 +214,7 @@ nearby tickets:
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day16.txt");
-        const ANSWERS: (usize, usize) = (21071, 3429967441937);
+        const ANSWERS: (usize, usize) = (21071, 3_429_967_441_937);
 
         #[test]
         pub fn test() {

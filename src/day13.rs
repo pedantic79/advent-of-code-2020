@@ -184,7 +184,7 @@ mod tests {
     #[test]
     pub fn test2() {
         assert_eq!(part2(&generator("0\nx,17,13,19")), 2923);
-        assert_eq!(part2_crt(&generator(SAMPLE)), 1068781);
+        assert_eq!(part2_crt(&generator(SAMPLE)), 1_068_781);
     }
 
     mod regression {
