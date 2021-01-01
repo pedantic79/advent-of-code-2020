@@ -151,8 +151,13 @@ fn find_range_bounds_prefix2(inputs: &[usize], target: usize) -> (usize, usize) 
                 .skip(start + 2)
                 .map(|(end, &last)| (end, last - prefix))
                 .take_while(|&(_, sum)| sum <= target)
-                .find(|&(_, sum)| sum == target)
-                .map(|(end, _)| (start, end))
+                .find_map(|(end, sum)| {
+                    if sum == target {
+                        Some((start, end))
+                    } else {
+                        None
+                    }
+                })
         })
         .unwrap()
 }

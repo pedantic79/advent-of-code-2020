@@ -163,8 +163,7 @@ pub fn generator(input: &str) -> Vec<Vec<Token>> {
         .lines()
         .map(|line| {
             line.chars()
-                .filter(|x| *x != ' ')
-                .map(|x| x.into())
+                .filter_map(|x| if x != ' ' { Some(x.into()) } else { None })
                 .collect()
         })
         .collect()

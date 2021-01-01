@@ -10,8 +10,13 @@ pub struct ProgramFragment {
 pub fn generator(input: &str) -> Vec<ProgramFragment> {
     input
         .split("mask ")
-        .filter(|group| !group.is_empty())
-        .map(|group| parse_group(group))
+        .filter_map(|group| {
+            if !group.is_empty() {
+                Some(parse_group(group))
+            } else {
+                None
+            }
+        })
         .collect()
 }
 

@@ -8,7 +8,7 @@ use crate::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
 //     b" #  #  #  #  #  #   ",
 // ];
 
-const SEA_MONSTER: u64 = 82352190514266112;
+const SEA_MONSTER: u64 = 82_352_190_514_266_112;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir {
@@ -37,8 +37,8 @@ impl Default for Dir {
 }
 
 impl Dir {
-    fn value(&self) -> usize {
-        *self as usize
+    fn value(self) -> usize {
+        self as usize
     }
 }
 
@@ -341,20 +341,20 @@ impl<'a> TileCache<'a> {
 
         for &flipped in &[true, false] {
             for &direction in [Dir::Top, Dir::Right, Dir::Bottom, Dir::Left].iter().rev() {
-                let mtile = ModifiedTile {
+                let mod_tile = ModifiedTile {
                     flipped,
                     direction,
                     tile,
                 };
 
-                if mtile
+                if mod_tile
                     .edges()
                     .0
                     .iter()
                     .map(|edge| (self.get_edge_count_by_edge_id(*edge)))
                     .eq([1, 2, 2, 1].iter().copied())
                 {
-                    return mtile;
+                    return mod_tile;
                 }
             }
         }

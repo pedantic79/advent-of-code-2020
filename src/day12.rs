@@ -4,20 +4,22 @@ pub enum Op {
     South(i32),
     East(i32),
     West(i32),
-    Left(i32),
-    Right(i32),
+    Left(usize),
+    Right(usize),
     Forward(i32),
 }
 
-impl From<(u8, i32)> for Op {
-    fn from((b, n): (u8, i32)) -> Self {
+impl From<(u8, &str)> for Op {
+    fn from((b, s): (u8, &str)) -> Self {
+        let n = s.parse().unwrap();
+
         match b {
             b'N' => Op::North(n),
             b'S' => Op::South(n),
             b'E' => Op::East(n),
             b'W' => Op::West(n),
-            b'L' => Op::Left(n),
-            b'R' => Op::Right(n),
+            b'L' => Op::Left(s.parse().unwrap()),
+            b'R' => Op::Right(s.parse().unwrap()),
             b'F' => Op::Forward(n),
             _ => panic!("invalid op"),
         }
@@ -86,7 +88,7 @@ impl Ship {
 pub fn generator(input: &str) -> Vec<Op> {
     input
         .lines()
-        .map(|x| (x.bytes().next().unwrap(), x[1..].parse().unwrap()).into())
+        .map(|x| (x.bytes().next().unwrap(), &x[1..]).into())
         .collect()
 }
 
@@ -124,8 +126,8 @@ pub fn part2(inputs: &[Op]) -> i32 {
             Op::South(amount) => waypoint.1 -= amount,
             Op::East(amount) => waypoint.0 += amount,
             Op::West(amount) => waypoint.0 -= amount,
-            Op::Left(amount) => waypoint = rotate_left(waypoint, *amount as usize / 90),
-            Op::Right(amount) => waypoint = rotate_right(waypoint, *amount as usize / 90),
+            Op::Left(amount) => waypoint = rotate_left(waypoint, *amount / 90),
+            Op::Right(amount) => waypoint = rotate_right(waypoint, *amount / 90),
             Op::Forward(amount) => {
                 ship.x += waypoint.0 * amount;
                 ship.y += waypoint.1 * amount;
@@ -150,8 +152,8 @@ pub fn part1(inputs: &[Op]) -> i32 {
             Op::South(amount) => ship.y -= amount,
             Op::East(amount) => ship.x += amount,
             Op::West(amount) => ship.x -= amount,
-            Op::Left(amount) => ship.turn_left(*amount as usize / 90),
-            Op::Right(amount) => ship.turn_right(*amount as usize / 90),
+            Op::Left(amount) => ship.turn_left(*amount / 90),
+            Op::Right(amount) => ship.turn_right(*amount / 90),
             Op::Forward(amount) => ship.move_forward(*amount),
         }
     }

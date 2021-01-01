@@ -121,7 +121,7 @@ pub fn part2_brute(_schedule: &BusSchedule) -> usize {
     const START: usize = 407; // MAX - OFFSET
     const STEP: usize = 457; // MAX
 
-    #[inline(always)]
+    #[inline]
     fn check_mod(m: usize, n: usize) -> bool {
         n % m == 0
     }
