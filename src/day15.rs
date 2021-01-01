@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, convert::TryInto};
 
 const PART1_ITERATIONS: usize = 2020;
 const PART2_ITERATIONS: usize = 30_000_000;
@@ -65,7 +65,7 @@ pub fn solve_32(inputs: &[u32], limit: u32) -> u32 {
         last = i;
     }
 
-    let l = inputs.len() as u32;
+    let l = inputs.len().try_into().unwrap();
     for i in l..limit {
         let v = seen[last as usize];
         seen[last as usize] = i;
@@ -98,7 +98,7 @@ pub fn part2_alt(inputs: &[usize]) -> usize {
 
 #[aoc(day15, part2, thirtytwo)]
 pub fn part2_32(inputs: &[u32]) -> u32 {
-    solve_32(inputs, PART2_ITERATIONS as u32)
+    solve_32(inputs, PART2_ITERATIONS.try_into().unwrap())
 }
 
 #[cfg(test)]

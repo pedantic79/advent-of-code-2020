@@ -15,7 +15,7 @@ use std::collections::{HashMap, HashSet};
 pub struct HexCoord(i32, i32);
 
 impl HexCoord {
-    fn neighbors(&self) -> [HexCoord; 6] {
+    fn neighbors(self) -> [HexCoord; 6] {
         [
             self.nw(),
             self.ne(),
@@ -26,27 +26,27 @@ impl HexCoord {
         ]
     }
 
-    fn ne(&self) -> Self {
+    fn ne(self) -> Self {
         Self(self.0 + 1, self.1 + 1)
     }
 
-    fn nw(&self) -> Self {
+    fn nw(self) -> Self {
         Self(self.0, self.1 + 1)
     }
 
-    fn se(&self) -> Self {
+    fn se(self) -> Self {
         Self(self.0, self.1 - 1)
     }
 
-    fn sw(&self) -> Self {
+    fn sw(self) -> Self {
         Self(self.0 - 1, self.1 - 1)
     }
 
-    fn e(&self) -> Self {
+    fn e(self) -> Self {
         Self(self.0 + 1, self.1)
     }
 
-    fn w(&self) -> Self {
+    fn w(self) -> Self {
         Self(self.0 - 1, self.1)
     }
 

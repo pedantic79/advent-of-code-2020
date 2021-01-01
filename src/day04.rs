@@ -16,10 +16,10 @@ impl Passport {
             && self
                 .0
                 .iter()
-                .all(|(key, value)| self.validate_value(key, value))
+                .all(|(key, value)| Self::validate_value(key, value))
     }
 
-    fn validate_value(&self, key: &str, value: &str) -> bool {
+    fn validate_value(key: &str, value: &str) -> bool {
         match key {
             "byr" => Self::is_valid_range(value, 1920, 2002),
             "iyr" => Self::is_valid_range(value, 2010, 2020),
