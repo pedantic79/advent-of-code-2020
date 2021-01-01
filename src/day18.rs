@@ -335,7 +335,7 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day18.txt");
-        const ANSWERS: (usize, usize) = (45283905029161, 216975281211165);
+        const ANSWERS: (usize, usize) = (45_283_905_029_161, 216_975_281_211_165);
 
         #[test]
         pub fn test() {

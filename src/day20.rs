@@ -533,7 +533,7 @@ mod tests {
         // println!("{:?}", input[2473].rotate(116, Dir::Top, false).edges());
 
         assert_eq!(input.len(), 9);
-        assert_eq!(part1(&input), 20899048083289);
+        assert_eq!(part1(&input), 20_899_048_083_289);
     }
 
     #[test]
@@ -578,7 +578,7 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day20.txt");
-        const ANSWERS: (usize, usize) = (104831106565027, 2093);
+        const ANSWERS: (usize, usize) = (104_831_106_565_027, 2093);
 
         #[test]
         pub fn test() {

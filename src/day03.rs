@@ -104,7 +104,7 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day3.txt");
-        const ANSWERS: (usize, usize) = (292, 9354744432);
+        const ANSWERS: (usize, usize) = (292, 9_354_744_432);
 
         #[test]
         pub fn test() {
