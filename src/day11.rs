@@ -20,7 +20,7 @@ impl std::fmt::Debug for SeatState {
 }
 
 impl SeatState {
-    fn occupied(&self) -> usize {
+    fn occupied(self) -> usize {
         if let SeatState::Occupied = self {
             1
         } else {
@@ -37,7 +37,7 @@ enum Direction {
 }
 
 impl Direction {
-    fn next(&self, x: usize) -> usize {
+    fn next(self, x: usize) -> usize {
         match self {
             Direction::Increase => x + 1,
             Direction::Decrease => x.wrapping_sub(1),

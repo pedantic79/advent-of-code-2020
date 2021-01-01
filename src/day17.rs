@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
+    convert::TryInto,
     iter::from_fn,
 };
 
@@ -9,7 +10,7 @@ pub struct Point2D(i32, i32);
 pub struct CoordN(Vec<i32>);
 
 fn neighbors(n: usize) -> impl Iterator<Item = Vec<i32>> {
-    let mut stack = Vec::with_capacity(3usize.pow(n as u32));
+    let mut stack = Vec::with_capacity(3_usize.pow(n.try_into().unwrap()));
     stack.push(Vec::new());
 
     from_fn(move || {
@@ -82,7 +83,7 @@ pub fn generator(input: &str) -> Vec<Point2D> {
         .flat_map(|(y, line)| {
             line.chars().enumerate().filter_map(move |(x, c)| {
                 if c == '#' {
-                    Some(Point2D(y as i32, x as i32))
+                    Some(Point2D(y.try_into().unwrap(), x.try_into().unwrap()))
                 } else {
                     None
                 }

@@ -35,9 +35,7 @@ impl Input {
         }
 
         match &self.rules[&rule] {
-            Rule::Char(c) => starts_with(message, *c)
-                .map(|m| vec![m])
-                .unwrap_or_else(Vec::new),
+            Rule::Char(c) => starts_with(message, *c).map_or_else(Vec::new, |m| vec![m]),
             Rule::Subrule(v) => v
                 .iter()
                 .flat_map(|rule| self.solve_other(message, rule))

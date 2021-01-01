@@ -17,8 +17,13 @@ pub fn generator(input: &str) -> Vec<Food> {
                 .next()
                 .unwrap()
                 .split(' ')
-                .filter(|x| !x.is_empty())
-                .map(|x| x.to_string())
+                .filter_map(|x| {
+                    if !x.is_empty() {
+                        Some(x.to_string())
+                    } else {
+                        None
+                    }
+                })
                 .collect();
 
             let allergens = parens
@@ -27,8 +32,13 @@ pub fn generator(input: &str) -> Vec<Food> {
                 .trim_start_matches("contains")
                 .split(", ")
                 .map(|x| x.trim())
-                .filter(|x| !x.is_empty())
-                .map(|x| x.to_string())
+                .filter_map(|x| {
+                    if !x.is_empty() {
+                        Some(x.to_string())
+                    } else {
+                        None
+                    }
+                })
                 .collect();
 
             Food {
