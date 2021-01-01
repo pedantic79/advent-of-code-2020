@@ -41,12 +41,12 @@ mod tests {
     pub fn test_input() {
         // println!("{:?}", generator(SAMPLE));
 
-        assert_eq!(generator(SAMPLE), (5764801, 17807724));
+        assert_eq!(generator(SAMPLE), (5_764_801, 17_807_724));
     }
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE)), 14897079);
+        assert_eq!(part1(&generator(SAMPLE)), 14_897_079);
     }
 
     // #[test]
@@ -58,7 +58,7 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day25.txt");
-        const ANSWERS: (u64, usize) = (1478097, 0);
+        const ANSWERS: (u64, usize) = (1_478_097, 0);
 
         #[test]
         pub fn test() {

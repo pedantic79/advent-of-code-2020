@@ -195,7 +195,7 @@ F11";
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day12.txt");
-        const ANSWERS: (i32, i32) = (2458, 145117);
+        const ANSWERS: (i32, i32) = (2458, 145_117);
 
         #[test]
         pub fn test() {

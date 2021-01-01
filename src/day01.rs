@@ -109,7 +109,7 @@ mod tests {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2020/day1.txt");
-        const ANSWERS: (i32, i32) = (1018944, 8446464);
+        const ANSWERS: (i32, i32) = (1_018_944, 8_446_464);
 
         #[test]
         pub fn test() {
