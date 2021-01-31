@@ -106,7 +106,10 @@ pub fn part2_crt(schedule: &BusSchedule) -> usize {
     crate::chinese_remainder_theorem(schedule.ids.iter().enumerate().filter_map(
         |(idx, bus_line)| {
             if let BusLine::ID(bl) = bus_line {
-                Some((bl - idx, *bl))
+                let bl = *bl;
+                let offset = idx - idx % bl;
+
+                Some((offset + bl - idx, bl))
             } else {
                 None
             }
@@ -130,7 +133,7 @@ pub fn part2_brute(_schedule: &BusSchedule) -> usize {
     (644_101_200_000..=usize::MAX)
         .into_par_iter()
         .find_first(|multiplier| {
-            let answer = STEP * multiplier + START;
+            let answer = STEP.wrapping_mul(*multiplier) + START;
 
             check_mod(13, answer + 32)
                 && check_mod(17, answer + 67)
