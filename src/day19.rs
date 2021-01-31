@@ -77,21 +77,10 @@ impl Input {
                     vec![]
                 }
             }
-            Some(Rule::Subrule(v)) => {
-                let ans = v
-                    .iter()
-                    .flat_map(|irl| self.check_sub(message, irl))
-                    .collect::<Vec<_>>();
-
-                assert!(
-                    ans.iter().filter(|x| !x.is_empty()).count() < 3,
-                    "{:?}, {}",
-                    ans,
-                    message
-                );
-
-                ans
-            }
+            Some(Rule::Subrule(v)) => v
+                .iter()
+                .flat_map(|irl| self.check_sub(message, irl))
+                .collect::<Vec<_>>(),
         }
     }
 }
