@@ -7,22 +7,22 @@ use std::{
 pub struct Point2D(i32, i32);
 
 #[derive(PartialEq, Eq, Hash)]
-pub struct CoordN(Vec<i32>);
+pub struct CoordN<const N: usize>([i32; N]);
 
-fn neighbors(n: usize) -> impl Iterator<Item = Vec<i32>> {
+fn neighbors<const N: usize>(n: usize) -> impl Iterator<Item = [i32; N]> {
     let mut stack = Vec::with_capacity(3_usize.pow(n.try_into().unwrap()));
-    stack.push(Vec::new());
+    stack.push(([0; N], 0));
 
     from_fn(move || {
-        while let Some(mut current) = stack.pop() {
-            if current.len() == n {
+        while let Some((mut current, pos)) = stack.pop() {
+            if pos == n {
                 return Some(current);
             }
 
             for i in -1..=1 {
-                current.push(i);
-                stack.push(current.clone());
-                current.pop();
+                current[pos] = i;
+                stack.push((current, pos + 1));
+                current[pos] = 0;
             }
         }
 
@@ -30,7 +30,7 @@ fn neighbors(n: usize) -> impl Iterator<Item = Vec<i32>> {
     })
 }
 
-fn tick(state: HashSet<CoordN>) -> HashSet<CoordN> {
+fn tick<const N: usize>(state: HashSet<CoordN<N>>) -> HashSet<CoordN<N>> {
     let mut counts = HashMap::with_capacity(state.iter().next().unwrap().0.len());
 
     for coord in state.iter() {
@@ -58,12 +58,13 @@ fn tick(state: HashSet<CoordN>) -> HashSet<CoordN> {
         .collect()
 }
 
-fn solve(points: &[Point2D], dimensions: usize) -> usize {
+fn solve<const N: usize>(points: &[Point2D]) -> usize {
     let mut state = points
         .iter()
         .map(|&Point2D(y, x)| {
-            let mut point = vec![y, x];
-            point.resize(dimensions, 0);
+            let mut point = [0; N];
+            point[0] = y;
+            point[1] = x;
             CoordN(point)
         })
         .collect();
@@ -94,12 +95,12 @@ pub fn generator(input: &str) -> Vec<Point2D> {
 
 #[aoc(day17, part1)]
 pub fn part1(input: &[Point2D]) -> usize {
-    solve(input, 3)
+    solve::<3>(input)
 }
 
 #[aoc(day17, part2)]
 pub fn part2(cs: &[Point2D]) -> usize {
-    solve(cs, 4)
+    solve::<4>(cs)
 }
 
 #[cfg(test)]
