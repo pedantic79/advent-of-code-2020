@@ -17,7 +17,7 @@
 #![warn(clippy::unreadable_literal)]
 #![warn(clippy::unseparated_literal_suffix)]
 #![warn(clippy::filter_map)]
-#![warn(clippy::find_map)]
+#![warn(clippy::manual_find_map)]
 #![warn(clippy::map_unwrap_or)]
 #![warn(clippy::similar_names)]
 #![warn(clippy::unused_self)]
