@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 enum BusLine {
     Empty,
-    ID(usize),
+    Id(usize),
 }
 
 impl From<&str> for BusLine {
@@ -9,7 +9,7 @@ impl From<&str> for BusLine {
         if i == "x" {
             BusLine::Empty
         } else {
-            BusLine::ID(i.parse().unwrap())
+            BusLine::Id(i.parse().unwrap())
         }
     }
 }
@@ -34,7 +34,7 @@ pub fn generator(input: &str) -> BusSchedule {
 pub fn part1(schedule: &BusSchedule) -> usize {
     for i in schedule.start.. {
         for id in schedule.ids.iter() {
-            if let BusLine::ID(bus_id) = id {
+            if let BusLine::Id(bus_id) = id {
                 if i % bus_id == 0 {
                     return (i - schedule.start) * *bus_id;
                 }
@@ -88,7 +88,7 @@ pub fn part2(schedule: &BusSchedule) -> usize {
     let mut time = 0;
 
     for (offset, bl) in schedule.ids.iter().enumerate() {
-        if let BusLine::ID(modulo) = bl {
+        if let BusLine::Id(modulo) = bl {
             while (time + offset) % modulo != 0 {
                 // println!("time: {}", time);
                 time += step;
@@ -105,7 +105,7 @@ pub fn part2(schedule: &BusSchedule) -> usize {
 pub fn part2_crt(schedule: &BusSchedule) -> usize {
     crate::chinese_remainder_theorem(schedule.ids.iter().enumerate().filter_map(
         |(idx, bus_line)| {
-            if let BusLine::ID(bl) = bus_line {
+            if let BusLine::Id(bl) = bus_line {
                 let bl = *bl;
                 let offset = idx - idx % bl;
 
@@ -166,14 +166,14 @@ mod tests {
             BusSchedule {
                 start: 939,
                 ids: vec![
-                    BusLine::ID(7),
-                    BusLine::ID(13),
+                    BusLine::Id(7),
+                    BusLine::Id(13),
                     BusLine::Empty,
                     BusLine::Empty,
-                    BusLine::ID(59),
+                    BusLine::Id(59),
                     BusLine::Empty,
-                    BusLine::ID(31),
-                    BusLine::ID(19),
+                    BusLine::Id(31),
+                    BusLine::Id(19),
                 ]
             }
         );
