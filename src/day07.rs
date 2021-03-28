@@ -30,7 +30,6 @@ mod parser {
         character::complete::{alpha1, char, digit1},
         combinator::{all_consuming, map, map_res},
         multi::separated_list1,
-        sequence::{pair, terminated, tuple},
         IResult,
     };
 
@@ -39,7 +38,13 @@ mod parser {
     }
 
     fn adjective_color(s: &str) -> IResult<&str, (&str, &str)> {
-        tuple((terminated(alpha1, char(' ')), alpha1))(s)
+        let (s, adjective) = alpha1(s)?;
+        let (s, _) = char(' ')(s)?;
+        let (s, color) = alpha1(s)?;
+
+        Ok((s, (adjective, color)))
+
+        // tuple((terminated(alpha1, char(' ')), alpha1))(s)
     }
 
     fn bag(s: &str) -> IResult<&str, &str> {
@@ -47,14 +52,25 @@ mod parser {
     }
 
     fn color_bag(s: &str) -> IResult<&str, (&str, &str)> {
-        terminated(terminated(adjective_color, char(' ')), bag)(s)
+        let (s, adj_color) = adjective_color(s)?;
+        let (s, _) = char(' ')(s)?;
+        let (s, _) = bag(s)?;
+
+        Ok((s, adj_color))
+        // terminated(terminated(adjective_color, char(' ')), bag)(s)
     }
 
     fn count_color_bag(s: &str) -> IResult<&str, (usize, &str, &str)> {
-        map(
-            pair(terminated(numeric, char(' ')), color_bag),
-            |(num, (adj, color))| (num, adj, color),
-        )(s)
+        let (s, num) = numeric(s)?;
+        let (s, _) = char(' ')(s)?;
+        let (s, (adj, color)) = color_bag(s)?;
+
+        Ok((s, (num, adj, color)))
+
+        // map(
+        //     pair(terminated(numeric, char(' ')), color_bag),
+        //     |(num, (adj, color))| (num, adj, color),
+        // )(s)
     }
 
     fn multiple_color_bag(s: &str) -> IResult<&str, Vec<(usize, &str, &str)>> {
@@ -66,13 +82,24 @@ mod parser {
 
     #[allow(clippy::type_complexity)]
     pub fn rule(line: &str) -> IResult<&str, (&str, &str, Vec<(usize, &str, &str)>)> {
-        map(
-            all_consuming(terminated(
-                pair(terminated(color_bag, tag(" contain ")), multiple_color_bag),
-                char('.'),
-            )),
-            |((adj, color), list)| (adj, color, list),
+        all_consuming(
+            |s| -> IResult<&str, (&str, &str, Vec<(usize, &str, &str)>)> {
+                let (s, (adj, color)) = color_bag(s)?;
+                let (s, _) = tag(" contain ")(s)?;
+                let (s, list) = multiple_color_bag(s)?;
+                let (s, _) = char('.')(s)?;
+
+                Ok((s, (adj, color, list)))
+            },
         )(line)
+
+        // map(
+        //     all_consuming(terminated(
+        //         pair(terminated(color_bag, tag(" contain ")), multiple_color_bag),
+        //         char('.'),
+        //     )),
+        //     |((adj, color), list)| (adj, color, list),
+        // )(line)
     }
 
     #[cfg(test)]
