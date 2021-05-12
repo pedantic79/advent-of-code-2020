@@ -75,7 +75,7 @@ mod parser {
 
     fn multiple_color_bag(s: &str) -> IResult<&str, Vec<(usize, &str, &str)>> {
         alt((
-            map(tag("no other bags"), |_| vec![]),
+            map(tag("no other bags"), |_| Vec::new()),
             separated_list1(tag(", "), count_color_bag),
         ))(s)
     }
