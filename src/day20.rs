@@ -2,13 +2,17 @@ use std::collections::{HashMap, HashSet};
 
 use crate::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
 
-// const SEA_MONSTER: [&[u8]; 3] = [
-//     b"                  # ",
-//     b"#    ##    ##    ###",
-//     b" #  #  #  #  #  #   ",
-// ];
+const SEA_MONSTER_MATRIX: [&[u8]; 3] = [
+    b"                  # ",
+    b"#    ##    ##    ###",
+    b" #  #  #  #  #  #   ",
+];
 
-const SEA_MONSTER: u64 = 82_352_190_514_266_112;
+const SEA_MONSTER: [u32; 3] = [
+    sea_monster_chksum(SEA_MONSTER_MATRIX[0]),
+    sea_monster_chksum(SEA_MONSTER_MATRIX[1]),
+    sea_monster_chksum(SEA_MONSTER_MATRIX[2]),
+];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir {
@@ -42,14 +46,16 @@ impl Dir {
     }
 }
 
-fn sea_monster_chksum(r1: &[u8], r2: &[u8], r3: &[u8]) -> u64 {
-    let mut num = 0;
+const fn sea_monster_chksum(r1: &[u8]) -> u32 {
+    let mut sum = 0;
 
-    for &n in r1.iter().chain(r2.iter()).chain(r3.iter()).rev() {
-        num = num * 2 + if n == b'#' { 1 } else { 0 };
+    let mut j = 0;
+    while j < r1.len() {
+        sum = sum * 2 + if r1[j] == b'#' { 1 } else { 0 };
+        j += 1;
     }
 
-    num
+    sum
 }
 
 fn check_sea_monster<A>(grid: &[A]) -> usize
@@ -59,26 +65,18 @@ where
     debug_assert_eq!(grid.len(), 3);
     let len = grid[0].as_ref().len();
 
-    // let sea_monster = dbg!(sea_monster_chksum(
-    //     SEA_MONSTER[0],
-    //     SEA_MONSTER[1],
-    //     SEA_MONSTER[2]
-    // ));
+    (0..(len - 20))
+        .filter(|&offset| {
+            let end = offset + 20;
 
-    let mut count = 0;
-    for offset in 0..(len - 20) {
-        let end = offset + 20;
-        let r1 = &grid[0].as_ref()[offset..end];
-        let r2 = &grid[1].as_ref()[offset..end];
-        let r3 = &grid[2].as_ref()[offset..end];
+            (0..grid.len()).all(|i| {
+                let r1 = &grid[i].as_ref()[offset..end];
+                let map = sea_monster_chksum(r1);
 
-        let map = sea_monster_chksum(r1, r2, r3);
-        if SEA_MONSTER & map == SEA_MONSTER {
-            count += 1;
-        }
-    }
-
-    count
+                SEA_MONSTER[i] & map == SEA_MONSTER[i]
+            })
+        })
+        .count()
 }
 
 #[allow(dead_code)]
