@@ -14,6 +14,8 @@ const SEA_MONSTER: [u32; 3] = [
     sea_monster_chksum(SEA_MONSTER_MATRIX[2]),
 ];
 
+const SEA_MONSTER_SIZE: usize = count_sea_monster();
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir {
     Top,
@@ -58,16 +60,30 @@ const fn sea_monster_chksum(r1: &[u8]) -> u32 {
     sum
 }
 
+const fn count_sea_monster() -> usize {
+    let mut sum = 0;
+
+    let mut j = 0;
+    while j < SEA_MONSTER.len() {
+        sum += SEA_MONSTER[j].count_ones() as usize;
+        j += 1;
+    }
+
+    sum
+}
+
 fn check_sea_monster<A>(grid: &[A]) -> usize
 where
     A: AsRef<[u8]>,
 {
+    const WIDTH: usize = SEA_MONSTER_MATRIX[0].len();
+
     debug_assert_eq!(grid.len(), 3);
     let len = grid[0].as_ref().len();
 
-    (0..(len - 20))
+    (0..(len - WIDTH))
         .filter(|&offset| {
-            let end = offset + 20;
+            let end = offset + WIDTH;
 
             (0..grid.len()).all(|i| {
                 let r1 = &grid[i].as_ref()[offset..end];
@@ -139,14 +155,16 @@ fn print_grid(grid: &[Vec<u8>], size: usize, debug: bool) {
 pub struct Tile {
     id: usize,
     data: Vec<Vec<u16>>,
+    edges: ([u16; 4], [u16; 4]),
 }
 
 impl Tile {
     pub fn new(id: usize, data: Vec<Vec<u16>>) -> Self {
-        Self { id, data }
+        let edges = Self::calc_edges(&data);
+        Self { id, data, edges }
     }
 
-    fn edges(&self) -> ([u16; 4], [u16; 4]) {
+    fn calc_edges(data: &[Vec<u16>]) -> ([u16; 4], [u16; 4]) {
         fn array2int(data: &[u16]) -> (u16, u16) {
             let forward = data.iter().fold(0, |acc, n| acc * 2 + n);
             let reverse = data.iter().rev().fold(0, |acc, n| acc * 2 + n);
@@ -155,18 +173,17 @@ impl Tile {
         }
 
         // top
-        let (a1, a2) = array2int(&self.data.first().unwrap());
+        let (a1, a2) = array2int(data.first().unwrap());
 
         // bottom
-        let (b1, b2) = array2int(&self.data.last().unwrap());
+        let (b1, b2) = array2int(data.last().unwrap());
 
         // left
-        let (c1, c2) = array2int(&self.data.iter().map(|row| row[0]).collect::<Vec<_>>());
+        let (c1, c2) = array2int(&data.iter().map(|row| row[0]).collect::<Vec<_>>());
 
         // right
         let (d1, d2) = array2int(
-            &self
-                .data
+            &data
                 .iter()
                 .map(|row| row[row.len() - 1])
                 .collect::<Vec<_>>(),
@@ -175,6 +192,10 @@ impl Tile {
         // ([a1, d1, b2, c2], [c1, b1, d2, a2])
         // ([a1, d1, b2, c2], [a2, d2, b1, c1])
         ([a1, d1, b1, c1], [a2, d2, b2, c2])
+    }
+
+    fn edges(&self) -> ([u16; 4], [u16; 4]) {
+        self.edges
     }
 
     fn rotate(&self, edge: u16, direction: Dir) -> ModifiedTile<'_> {
@@ -337,7 +358,7 @@ impl<'a> TileCache<'a> {
     fn orient_first_tile(&self, tile_id: usize) -> ModifiedTile<'a> {
         let tile = self.id2tile[&tile_id];
 
-        for &flipped in &[true, false] {
+        for &flipped in &[false, true] {
             for &direction in [Dir::Top, Dir::Right, Dir::Bottom, Dir::Left].iter().rev() {
                 let mod_tile = ModifiedTile {
                     flipped,
@@ -402,6 +423,7 @@ fn solve1(cache: &TileCache<'_>) -> (Vec<usize>, Vec<usize>) {
                 }
                 hm
             });
+
     let corners: Vec<usize> = unique_tile_edge_count
         .iter()
         .filter_map(|(id, c)| if *c > 2 { Some(*id) } else { None })
@@ -507,7 +529,7 @@ pub fn part2(tiles: &[Tile]) -> usize {
     grid.iter()
         .map(|row| bytecount::count(&row, b'#'))
         .sum::<usize>()
-        - 15 * count
+        - SEA_MONSTER_SIZE * count
 }
 
 #[cfg(test)]
