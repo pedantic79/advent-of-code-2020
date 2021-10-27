@@ -10,29 +10,29 @@ pub fn generator(input: &str) -> Vec<i32> {
     input.lines().map(|l| l.parse().unwrap()).collect()
 }
 
-#[aoc(day1, part1, BTreeSet)]
+#[aoc(day1, part1, BinarySearch)]
 pub fn part1(inputs: &[i32]) -> i32 {
-    let mut seen = BTreeSet::new();
+    let mut inputs = inputs.to_vec();
+    inputs.sort_unstable();
 
-    for input in inputs {
-        let remainder = TARGET - *input;
-        if seen.contains(&remainder) {
-            return remainder * input;
-        }
-
-        seen.insert(*input);
-    }
-
-    unreachable!()
+    inputs
+        .iter()
+        .find_map(|&x| {
+            inputs
+                .binary_search(&(TARGET - x))
+                .map(|_| x * (TARGET - x))
+                .ok()
+        })
+        .unwrap_or(-1)
 }
 
-#[aoc(day1, part2)]
+#[aoc(day1, part2, Two)]
 pub fn part2(inputs: &[i32]) -> i32 {
     let mut inputs = inputs.to_vec();
     inputs.sort_unstable();
     let len = inputs.len();
 
-    for (i, a) in inputs[0..(len - 2)].iter().enumerate() {
+    for (i, a) in inputs[..(len - 2)].iter().enumerate() {
         let mut left = i + 1;
         let mut right = len - 1;
         while left < right {
