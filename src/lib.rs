@@ -16,11 +16,13 @@
 #![warn(clippy::cast_sign_loss)]
 #![warn(clippy::unreadable_literal)]
 #![warn(clippy::unseparated_literal_suffix)]
-#![warn(clippy::filter_map)]
+#![warn(clippy::manual_filter_map)]
 #![warn(clippy::manual_find_map)]
 #![warn(clippy::map_unwrap_or)]
 #![warn(clippy::similar_names)]
 #![warn(clippy::unused_self)]
+
+use std::ops::Mul;
 
 #[macro_use]
 extern crate aoc_runner_derive;
@@ -64,12 +66,17 @@ trait MinMaxIterator: Iterator {
     }
 }
 
+pub trait MyInteger: num::Integer + Clone + for<'a> Mul<&'a Self, Output = Self> {}
+
+impl<T> MyInteger for T where T: num::Integer + Clone + for<'a> Mul<&'a T, Output = T> {}
+
 impl<T: ?Sized> MinMaxIterator for T where T: Iterator {}
 
+// Based on the C++ algorithm here: https://stackoverflow.com/a/53604277/7263440
 #[inline]
 pub fn mod_inv<U>(mut a: U, mut m: U) -> U
 where
-    U: num::Integer + Clone,
+    U: MyInteger,
 {
     if m <= U::one() {
         return U::zero();
@@ -84,25 +91,21 @@ where
             return U::zero();
         }
 
-        let q = a.clone() / m.clone();
-        let t = m.clone();
-        m = a % m;
-        a = t;
+        let (q, temp) = a.div_rem(&m);
+        a = m;
+        m = temp;
 
-        let t2 = x0.clone();
-        let qx0 = q * x0.0;
+        let q = q.mul(&x0.0);
 
-        if x0.1 != x1.1 {
-            x0 = (x1.0 + qx0, x1.1);
+        x1 = if x0.1 != x1.1 {
+            (x1.0 + q, x1.1)
+        } else if x1.0 > q {
+            (x1.0 - q, x1.1)
         } else {
-            x0 = if x1.0 > qx0 {
-                (x1.0 - qx0, x1.1)
-            } else {
-                (qx0 - x1.0, !x0.1)
-            };
-        }
+            (q - x1.0, !x0.1)
+        };
 
-        x1 = t2;
+        std::mem::swap(&mut x0, &mut x1);
     }
 
     if x1.1 {
@@ -114,7 +117,7 @@ where
 
 pub fn mod_pow<T>(mut base: T, mut exp: T, modulus: T) -> T
 where
-    T: num::Integer + Clone,
+    T: MyInteger,
 {
     if modulus == T::one() {
         return T::zero();
@@ -135,7 +138,7 @@ where
 
 pub fn baby_step_giant_step<I>(modulo: I, base: I, target: I) -> Option<I>
 where
-    I: num::Integer + Clone + num::integer::Roots + num::ToPrimitive + std::hash::Hash,
+    I: MyInteger + num::integer::Roots + num::ToPrimitive + std::hash::Hash,
 {
     let m = num::integer::sqrt(modulo.clone());
 
@@ -162,7 +165,7 @@ where
 
 pub fn chinese_remainder_theorem<T, I>(inputs: I) -> T
 where
-    T: num::Integer + Clone,
+    T: MyInteger,
     I: Iterator<Item = (T, T)> + Clone,
 {
     let mut product = T::one();

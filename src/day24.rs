@@ -60,7 +60,7 @@ impl HexCoord {
                 tag("e"),
                 tag("w"),
             )),
-            Self(0, 0),
+            || Self(0, 0),
             |current, s| match s {
                 "ne" => current.ne(),
                 "nw" => current.nw(),
