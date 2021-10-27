@@ -15,9 +15,8 @@ impl BagRules {
     fn count_contained(&self, color: &str) -> usize {
         self.rules[color]
             .iter()
-            .map(|(c, count)| count * self.count_contained(c))
+            .map(|(c, count)| count * (self.count_contained(c) + 1))
             .sum::<usize>()
-            + 1
     }
 }
 
@@ -193,7 +192,7 @@ pub fn part1_two(parent_map: &HashMap<String, Vec<String>>) -> usize {
 
 #[aoc(day7, part2)]
 pub fn part2(inputs: &BagRules) -> usize {
-    inputs.count_contained("shiny gold") - 1
+    inputs.count_contained("shiny gold")
 }
 
 #[cfg(test)]
@@ -258,9 +257,9 @@ dark violet bags contain no other bags.";
     pub fn test2() {
         let bags = generator(SAMPLE1).unwrap();
 
-        assert_eq!(bags.count_contained("faded blue"), 1);
-        assert_eq!(bags.count_contained("vibrant plum"), 12);
-        assert_eq!(bags.count_contained("dark olive"), 8);
+        assert_eq!(bags.count_contained("faded blue"), 0);
+        assert_eq!(bags.count_contained("vibrant plum"), 11);
+        assert_eq!(bags.count_contained("dark olive"), 7);
 
         assert_eq!(part2(&generator(SAMPLE1).unwrap()), 32);
         assert_eq!(part2(&generator(SAMPLE2).unwrap()), 126);

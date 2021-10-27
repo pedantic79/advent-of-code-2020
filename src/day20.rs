@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use num::integer::Roots;
+
 use crate::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
 
 const SEA_MONSTER_MATRIX: [&[u8]; 3] = [
@@ -15,6 +17,9 @@ const SEA_MONSTER: [u32; 3] = [
 ];
 
 const SEA_MONSTER_SIZE: usize = count_sea_monster();
+
+const WIDTH: usize = 10;
+const WIDTH_TRIM: usize = WIDTH - 2;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir {
@@ -98,30 +103,30 @@ where
 #[allow(dead_code)]
 fn print_full_grid(mosiac: &[Vec<Option<ModifiedTile<'_>>>]) {
     let l = mosiac.len();
-    let mut full_grid = vec![vec![b'.'; l * 10]; l * 10];
+    let mut full_grid = vec![vec![b'.'; l * WIDTH]; l * WIDTH];
 
     for (r, m_row) in mosiac.iter().enumerate() {
         for (c, cell) in m_row.iter().enumerate() {
-            let r_offset = r * 10;
-            let c_offset = c * 10;
+            let r_offset = r * WIDTH;
+            let c_offset = c * WIDTH;
             let map = cell.as_ref().unwrap().symbols_debug();
 
-            for (row, mrow) in full_grid[r_offset..(r_offset + 10)]
+            for (row, mrow) in full_grid[r_offset..(r_offset + WIDTH)]
                 .iter_mut()
                 .zip(map.iter())
             {
-                row[c_offset..(c_offset + 10)].copy_from_slice(mrow)
+                row[c_offset..(c_offset + WIDTH)].copy_from_slice(mrow)
             }
         }
     }
 
     println!();
-    print_grid(&full_grid, 10, true);
+    print_grid(&full_grid, WIDTH, true);
 }
 
 fn print_grid(grid: &[Vec<u8>], size: usize, debug: bool) {
     let l = grid.len();
-    let mut each = l / 10;
+    let mut each = l / WIDTH;
     each += match each {
         9 => 3,
         2 => 1,
@@ -135,12 +140,7 @@ fn print_grid(grid: &[Vec<u8>], size: usize, debug: bool) {
     } else {
         for (r, row) in grid.iter().enumerate() {
             if r % size == 0 {
-                println!(
-                    "{}",
-                    std::iter::repeat('-')
-                        .take(each * (size + 3))
-                        .collect::<String>()
-                );
+                println!("{}", ".".repeat(each * (size + 3)));
             }
 
             for sec in row.chunks(size).map(|x| std::str::from_utf8(x).unwrap()) {
@@ -206,7 +206,7 @@ impl Tile {
                 let mt = ModifiedTile {
                     flipped,
                     direction: d.into(),
-                    tile: &self,
+                    tile: self,
                 };
 
                 if mt.edges().0[direction.value()] == edge {
@@ -280,11 +280,11 @@ impl<'a> ModifiedTile<'a> {
         }
     }
 
-    fn symbols(&self) -> [[u8; 8]; 8] {
-        let mut grid = [[b'.'; 8]; 8];
+    fn symbols(&self) -> [[u8; WIDTH_TRIM]; WIDTH_TRIM] {
+        let mut grid = [[b'.'; WIDTH_TRIM]; WIDTH_TRIM];
 
-        for (r, row) in self.tile.data.iter().skip(1).take(8).enumerate() {
-            for (c, cell) in row.iter().skip(1).take(8).enumerate() {
+        for (r, row) in self.tile.data.iter().skip(1).take(WIDTH_TRIM).enumerate() {
+            for (c, cell) in row.iter().skip(1).take(WIDTH_TRIM).enumerate() {
                 grid[r][c] = if *cell == 1 { b'#' } else { b'.' };
             }
         }
@@ -308,11 +308,11 @@ impl<'a> ModifiedTile<'a> {
     }
 
     #[allow(dead_code)]
-    fn symbols_debug(&self) -> [[u8; 10]; 10] {
-        let mut grid = [[b'.'; 10]; 10];
+    fn symbols_debug(&self) -> [[u8; WIDTH]; WIDTH] {
+        let mut grid = [[b'.'; WIDTH]; WIDTH];
 
-        for (r, row) in self.tile.data.iter().skip(0).take(10).enumerate() {
-            for (c, cell) in row.iter().skip(0).take(10).enumerate() {
+        for (r, row) in self.tile.data.iter().skip(0).take(WIDTH).enumerate() {
+            for (c, cell) in row.iter().skip(0).take(WIDTH).enumerate() {
                 grid[r][c] = if *cell == 1 { b'#' } else { b'.' };
             }
         }
@@ -411,7 +411,7 @@ pub fn generator(input: &str) -> Vec<Tile> {
         .collect()
 }
 
-fn solve1(cache: &TileCache<'_>) -> (Vec<usize>, Vec<usize>) {
+fn solve1(cache: &TileCache<'_>) -> Vec<usize> {
     // maps tileid to unique_edges
     let unique_tile_edge_count =
         cache
@@ -429,26 +429,27 @@ fn solve1(cache: &TileCache<'_>) -> (Vec<usize>, Vec<usize>) {
         .filter_map(|(id, c)| if *c > 2 { Some(*id) } else { None })
         .collect();
 
-    let sides = unique_tile_edge_count
-        .iter()
-        .filter_map(|(id, c)| if *c <= 2 { Some(*id) } else { None })
-        .collect();
+    // let sides = unique_tile_edge_count
+    //     .iter()
+    //     .filter_map(|(id, c)| if *c <= 2 { Some(*id) } else { None })
+    //     .collect();
 
-    (corners, sides)
+    // (corners, sides)
+    corners
 }
 
 #[aoc(day20, part1)]
 pub fn part1(inputs: &[Tile]) -> usize {
     let cache = TileCache::new(inputs);
-    solve1(&cache).0.into_iter().product()
+    solve1(&cache).into_iter().product()
 }
 
 #[aoc(day20, part2)]
 pub fn part2(tiles: &[Tile]) -> usize {
     let cache = TileCache::new(tiles);
 
-    let (corners, _sides) = solve1(&cache);
-    let l = if tiles.len() == 144 { 12 } else { 3 }; // Cheating, you can use sqrt
+    let corners = solve1(&cache);
+    let l = tiles.len().sqrt();
 
     let mut mosiac: Vec<Vec<Option<ModifiedTile<'_>>>> = vec![vec![None; l]; l];
 
@@ -494,16 +495,19 @@ pub fn part2(tiles: &[Tile]) -> usize {
 
     // print_full_grid(&mosiac);
 
-    let mut grid = vec![vec![b'.'; l * 8]; l * 8];
+    let mut grid = vec![vec![b'.'; l * WIDTH_TRIM]; l * WIDTH_TRIM];
 
     for (r, m_row) in mosiac.iter().enumerate() {
         for (c, cell) in m_row.iter().enumerate() {
-            let r_offset = r * 8;
-            let c_offset = c * 8;
+            let r_offset = r * WIDTH_TRIM;
+            let c_offset = c * WIDTH_TRIM;
             let map = cell.as_ref().unwrap().symbols();
 
-            for (row, mrow) in grid[r_offset..(r_offset + 8)].iter_mut().zip(map.iter()) {
-                row[c_offset..(c_offset + 8)].copy_from_slice(mrow)
+            for (row, mrow) in grid[r_offset..(r_offset + WIDTH_TRIM)]
+                .iter_mut()
+                .zip(map.iter())
+            {
+                row[c_offset..(c_offset + WIDTH_TRIM)].copy_from_slice(mrow)
             }
         }
     }
@@ -527,7 +531,7 @@ pub fn part2(tiles: &[Tile]) -> usize {
     }
 
     grid.iter()
-        .map(|row| bytecount::count(&row, b'#'))
+        .map(|row| bytecount::count(row, b'#'))
         .sum::<usize>()
         - SEA_MONSTER_SIZE * count
 }
