@@ -146,7 +146,7 @@ acc +6";
 
     #[test]
     pub fn test2() {
-        assert_eq!(generator(SAMPLE).execute().1, false);
+        assert!(!generator(SAMPLE).execute().1);
 
         assert_eq!(part2(&generator(SAMPLE)), 8);
     }
