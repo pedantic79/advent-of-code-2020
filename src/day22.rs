@@ -6,7 +6,7 @@ use std::{
 
 use nohash_hasher::BuildNoHashHasher;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Players(VecDeque<usize>, VecDeque<usize>);
 
 fn parse_player(input: &str) -> VecDeque<usize> {

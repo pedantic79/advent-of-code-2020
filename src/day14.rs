@@ -146,9 +146,10 @@ impl From<&str> for BitNumber {
 
 impl From<BitNumber> for usize {
     fn from(array: BitNumber) -> Self {
-        array.0.iter().fold(0, |total, bit| {
-            (total << 1) + if *bit == Bit::One { 1 } else { 0 }
-        })
+        array
+            .0
+            .iter()
+            .fold(0, |total, bit| (total << 1) + usize::from(*bit == Bit::One))
     }
 }
 

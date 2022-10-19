@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TicketRules {
     rules: Vec<[usize; 4]>,
     ticket: Vec<usize>,
