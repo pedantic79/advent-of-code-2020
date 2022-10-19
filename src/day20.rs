@@ -58,7 +58,7 @@ const fn sea_monster_chksum(r1: &[u8]) -> u32 {
 
     let mut j = 0;
     while j < r1.len() {
-        sum = sum * 2 + if r1[j] == b'#' { 1 } else { 0 };
+        sum = sum * 2 + (r1[j] == b'#') as u32;
         j += 1;
     }
 
@@ -151,7 +151,7 @@ fn print_grid(grid: &[Vec<u8>], size: usize, debug: bool) {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Tile {
     id: usize,
     data: Vec<Vec<u16>>,
@@ -403,7 +403,7 @@ pub fn generator(input: &str) -> Vec<Tile> {
                 .unwrap();
 
             let tile: Vec<Vec<u16>> = line
-                .map(|l| l.chars().map(|x| if x == '#' { 1 } else { 0 }).collect())
+                .map(|l| l.chars().map(|x| (x == '#').into()).collect())
                 .collect();
 
             Tile::new(tile_id, tile)

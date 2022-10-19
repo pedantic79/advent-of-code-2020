@@ -21,11 +21,7 @@ impl std::fmt::Debug for SeatState {
 
 impl SeatState {
     fn occupied(self) -> usize {
-        if let SeatState::Occupied = self {
-            1
-        } else {
-            0
-        }
+        (SeatState::Occupied == self).into()
     }
 }
 

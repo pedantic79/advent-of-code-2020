@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct BagRules {
     rules: HashMap<BagColor, Vec<(BagColor, usize)>>,
 }

@@ -1,9 +1,5 @@
 fn bool2num(b: bool) -> usize {
-    if b {
-        1
-    } else {
-        0
-    }
+    b.into()
 }
 
 #[aoc_generator(day5)]
