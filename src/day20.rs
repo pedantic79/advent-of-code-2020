@@ -593,7 +593,7 @@ mod tests {
             b"..##.###.####..#.####.##",
         ];
 
-        let count: usize = TEST.windows(3).map(|x| check_sea_monster(x)).sum();
+        let count: usize = TEST.windows(3).map(check_sea_monster).sum();
 
         assert_eq!(count, 1)
     }

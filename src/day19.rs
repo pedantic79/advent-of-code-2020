@@ -105,7 +105,7 @@ fn parse_rule_line(line: &str) -> (usize, Rule) {
 }
 
 fn parse_rules(input: &str) -> HashMap<usize, Rule> {
-    input.lines().map(|line| parse_rule_line(line)).collect()
+    input.lines().map(parse_rule_line).collect()
 }
 
 fn parse_messages(input: &str) -> Vec<String> {
