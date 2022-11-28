@@ -1,3 +1,5 @@
+use crate::common::utils;
+
 #[aoc_generator(day25)]
 pub fn generator(input: &str) -> (u64, u64) {
     let mut iter = input.lines();
@@ -13,12 +15,12 @@ const MOD: u64 = 20_201_227;
 fn loop_size(target1: u64, target2: u64) -> (u64, u64) {
     (
         target2,
-        crate::baby_step_giant_step(MOD, 7, target1).unwrap(),
+        utils::baby_step_giant_step(MOD, 7, target1).unwrap(),
     )
 }
 
 fn encryption_key((public_key, loop_count): (u64, u64)) -> u64 {
-    crate::mod_pow(public_key, loop_count, MOD)
+    utils::mod_pow(public_key, loop_count, MOD)
 }
 
 #[aoc(day25, part1)]

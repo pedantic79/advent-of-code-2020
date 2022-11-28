@@ -5,10 +5,7 @@ use std::{
 
 #[aoc_generator(day23)]
 pub fn generator(input: &str) -> Vec<u32> {
-    input
-        .chars()
-        .map(|x| x.to_digit(10).unwrap() as u32)
-        .collect()
+    input.chars().map(|x| x.to_digit(10).unwrap()).collect()
 }
 
 #[allow(dead_code)]
@@ -82,7 +79,7 @@ pub fn part1(inputs: &[u32]) -> String {
 
     let mut current_pos = ring[1];
     while current_pos != 1 {
-        output.push(std::char::from_digit(current_pos as u32, 10).unwrap());
+        output.push(std::char::from_digit(current_pos, 10).unwrap());
         current_pos = ring[usize::try_from(current_pos).unwrap()];
     }
 

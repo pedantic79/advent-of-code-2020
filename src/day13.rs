@@ -1,3 +1,5 @@
+use crate::common::utils;
+
 #[derive(Debug, PartialEq)]
 enum BusLine {
     Empty,
@@ -103,7 +105,7 @@ pub fn part2(schedule: &BusSchedule) -> usize {
 
 #[aoc(day13, part2, crt)]
 pub fn part2_crt(schedule: &BusSchedule) -> usize {
-    crate::chinese_remainder_theorem(schedule.ids.iter().enumerate().filter_map(
+    utils::chinese_remainder_theorem(schedule.ids.iter().enumerate().filter_map(
         |(idx, bus_line)| {
             if let BusLine::Id(bl) = bus_line {
                 let bl = *bl;
