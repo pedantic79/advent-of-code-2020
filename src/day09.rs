@@ -1,4 +1,4 @@
-use crate::MinMaxIterator;
+use super::common::MinMaxIterator;
 use std::cmp::Ordering::{Equal, Greater, Less};
 
 #[aoc_generator(day9)]

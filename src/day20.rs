@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use num::integer::Roots;
 
-use crate::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
+use crate::common::matrix::{flip, rotate_bottom, rotate_left, rotate_right};
 
 const SEA_MONSTER_MATRIX: [&[u8]; 3] = [
     b"                  # ",
