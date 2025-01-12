@@ -1,7 +1,7 @@
 #!/bin/bash
 
 current="$(gdate +%s)"
-target="$(gdate -d '23:00:01' +%s)"
+target="$(gdate -d '23:00:10' +%s)"
 seconds=$(dc <<< "$target $current - 0 + p") || exit
 
 steps=60

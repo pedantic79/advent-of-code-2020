@@ -106,7 +106,7 @@ pub fn fold_separated_list0<I, O, O2, E, F, G, H, R, S>(
     mut sep: S,
     mut f: F,
     mut init: H,
-    mut g: G,
+    mut combiner: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
     I: Clone + InputLength,
@@ -123,7 +123,7 @@ where
             Err(nom::Err::Error(_)) => return Ok((i, res)),
             Err(e) => return Err(e),
             Ok((i1, o)) => {
-                res = g(res, o);
+                res = combiner(res, o);
                 i = i1;
             }
         }
@@ -146,7 +146,7 @@ where
                         Err(nom::Err::Error(_)) => return Ok((i, res)),
                         Err(e) => return Err(e),
                         Ok((i2, o)) => {
-                            res = g(res, o);
+                            res = combiner(res, o);
                             i = i2;
                         }
                     }
@@ -160,7 +160,7 @@ pub fn fold_separated_list1<I, O, O2, E, F, G, H, R, S>(
     mut sep: S,
     mut f: F,
     mut init: H,
-    mut g: G,
+    mut combiner: G,
 ) -> impl FnMut(I) -> IResult<I, R, E>
 where
     I: Clone + InputLength,
@@ -177,7 +177,7 @@ where
         match f.parse(i.clone()) {
             Err(e) => return Err(e),
             Ok((i1, o)) => {
-                res = g(res, o);
+                res = combiner(res, o);
                 i = i1;
             }
         }
@@ -200,7 +200,7 @@ where
                         Err(nom::Err::Error(_)) => return Ok((i, res)),
                         Err(e) => return Err(e),
                         Ok((i2, o)) => {
-                            res = g(res, o);
+                            res = combiner(res, o);
                             i = i2;
                         }
                     }
