@@ -1,9 +1,10 @@
+use super::extensions::AddIsize;
+use arrayvec::ArrayVec;
 use std::{fmt::Debug, ops::Mul};
 
-use arrayvec::ArrayVec;
-
-use super::extensions::AddIsize;
 pub use super::parse::*;
+
+pub mod rev;
 
 pub trait MyInteger: num::Integer + Clone + for<'a> Mul<&'a Self, Output = Self> {}
 
@@ -266,4 +267,22 @@ where
     let tri = sum * (sum + 1) / 2 + y1;
 
     (to_usize(xsign) | (to_usize(ysign) << 1)) + tri * 4
+}
+
+pub fn calculate_area_perimeter<T>(points: impl Iterator<Item = (T, T)>) -> (T, T)
+where
+    T: num::PrimInt + num::Signed,
+{
+    let (a, p, _) = points.fold(
+        (T::zero(), T::zero(), (T::zero(), T::zero())),
+        |(area, perimeter, prev), curr| {
+            (
+                area + (prev.0 * curr.1 - prev.1 * curr.0),
+                perimeter + (prev.0 - curr.0).abs() + (prev.1 - curr.1).abs(),
+                curr,
+            )
+        },
+    );
+
+    (a, p)
 }
