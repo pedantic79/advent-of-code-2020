@@ -1,27 +1,3 @@
-#![warn(rust_2018_idioms)]
-// The following are enabled by clippy::pedantic
-// #![warn(clippy::pedantic)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::implicit_hasher)]
-#![allow(clippy::explicit_iter_loop)]
-#![allow(clippy::redundant_closure_for_method_calls)]
-#![allow(clippy::if_not_else)]
-#![allow(clippy::option_if_let_else)]
-#![allow(clippy::match_on_vec_items)]
-#![allow(clippy::needless_pass_by_value)]
-#![warn(clippy::trivially_copy_pass_by_ref)]
-#![warn(clippy::inline_always)]
-#![warn(clippy::cast_possible_truncation)]
-#![warn(clippy::cast_possible_wrap)]
-#![warn(clippy::cast_sign_loss)]
-#![warn(clippy::unreadable_literal)]
-#![warn(clippy::unseparated_literal_suffix)]
-#![warn(clippy::manual_filter_map)]
-#![warn(clippy::manual_find_map)]
-#![warn(clippy::map_unwrap_or)]
-#![warn(clippy::similar_names)]
-#![warn(clippy::unused_self)]
-
 #[macro_use]
 extern crate aoc_runner_derive;
 

@@ -85,7 +85,6 @@ pub fn part1_alt(inputs: &[usize]) -> usize {
     solve_alt(inputs, PART1_ITERATIONS)
 }
 
-#[cfg(slow)]
 #[aoc(day15, part2)]
 pub fn part2(inputs: &[usize]) -> usize {
     solve(inputs, PART2_ITERATIONS)
