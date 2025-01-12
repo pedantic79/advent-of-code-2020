@@ -229,7 +229,7 @@ struct ModifiedTile<'a> {
     tile: &'a Tile,
 }
 
-impl<'a> ModifiedTile<'a> {
+impl ModifiedTile<'_> {
     fn edges(&self) -> ([u16; 4], [u16; 4]) {
         let (mut a, mut b) = self.tile.edges();
 
@@ -311,8 +311,8 @@ impl<'a> ModifiedTile<'a> {
     fn symbols_debug(&self) -> [[u8; WIDTH]; WIDTH] {
         let mut grid = [[b'.'; WIDTH]; WIDTH];
 
-        for (r, row) in self.tile.data.iter().skip(0).take(WIDTH).enumerate() {
-            for (c, cell) in row.iter().skip(0).take(WIDTH).enumerate() {
+        for (r, row) in self.tile.data.iter().skip(1).take(WIDTH).enumerate() {
+            for (c, cell) in row.iter().skip(1).take(WIDTH).enumerate() {
                 grid[r][c] = if *cell == 1 { b'#' } else { b'.' };
             }
         }
