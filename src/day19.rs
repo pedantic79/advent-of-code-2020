@@ -1,6 +1,16 @@
 use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{anychar, char},
+    combinator::map,
+    sequence::delimited,
+    IResult,
+};
+
+use crate::common::nom::{fold_separated_list0, nom_usize};
 
 #[derive(Debug, PartialEq, Clone)]
 enum Rule {
@@ -61,31 +71,54 @@ impl Input {
     }
 }
 
-fn parse_rule_line(line: &str) -> (usize, Rule) {
-    let mut colon = line.split(": ");
+fn parse_rule_line(s: &str) -> IResult<&str, (usize, Rule)> {
+    let (s, n) = nom_usize(s)?;
+    let (s, _) = tag(": ")(s)?;
+    let (s, rule) = alt((parse_char, parse_multi_rule_block))(s)?;
 
-    let n = colon.next().unwrap().parse::<usize>().unwrap();
-    let rest = colon.next().unwrap();
+    Ok((s, (n, rule)))
+}
 
-    let rule = if rest.starts_with('"') {
-        Rule::Char(rest.chars().nth(1).unwrap())
-    } else {
-        Rule::Subrule(
-            rest.split(" | ")
-                .map(|nums| nums.split(' ').map(|n| n.trim().parse().unwrap()).collect())
-                .collect(),
-        )
-    };
+fn parse_char(s: &str) -> IResult<&str, Rule> {
+    map(delimited(char('"'), anychar, char('"')), Rule::Char)(s)
+}
 
-    (n, rule)
+fn parse_multi_rule_block(s: &str) -> IResult<&str, Rule> {
+    map(
+        fold_separated_list0(
+            tag(" | "),
+            parse_rule_block,
+            || ArrayVec::new(),
+            |mut acc, r| {
+                acc.push(r);
+                acc
+            },
+        ),
+        Rule::Subrule,
+    )(s)
+}
+
+fn parse_rule_block(s: &str) -> IResult<&str, ArrayVec<usize, 3>> {
+    fold_separated_list0(
+        char(' '),
+        nom_usize,
+        || ArrayVec::new(),
+        |mut acc, n| {
+            acc.push(n);
+            acc
+        },
+    )(s)
 }
 
 fn parse_rules(input: &str) -> HashMap<usize, Rule> {
-    input.lines().map(parse_rule_line).collect()
+    input
+        .lines()
+        .map(|l| parse_rule_line(l).unwrap().1)
+        .collect()
 }
 
 fn parse_messages(input: &str) -> Vec<String> {
-    input.lines().map(|x| x.chars().collect()).collect()
+    input.lines().map(ToOwned::to_owned).collect()
 }
 
 #[aoc_generator(day19)]
@@ -95,8 +128,6 @@ pub fn generator(input: &str) -> Input {
     let rules = parse_rules(section.next().unwrap());
     let messages = parse_messages(section.next().unwrap());
     Input { rules, messages }
-
-    //19min
 }
 
 #[aoc(day19, part1)]
