@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use arrayvec::ArrayVec;
+
 #[derive(Debug, PartialEq, Clone)]
 enum Rule {
     Char(char),
-    Subrule(Vec<Vec<usize>>),
+    Subrule(ArrayVec<ArrayVec<usize, 3>, 2>),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -21,12 +23,71 @@ fn starts_with(s: &str, c: char) -> Option<&str> {
 }
 
 impl Input {
-    fn solve_other<'a>(&'a self, message: &'a str, rule: &[usize]) -> Vec<&'a str> {
-        rule.iter().fold(vec![message], |acc, rule| {
-            acc.iter()
-                .flat_map(|message| self.solve(message, *rule))
-                .collect()
-        })
+    fn replace_rule(&mut self, key: usize, a: &[usize], b: &[usize]) {
+        self.rules.insert(
+            key,
+            Rule::Subrule(ArrayVec::from([mk_array(a), mk_array(b)])),
+        );
+    }
+
+    fn solve_dfs(&self, message: &str, rules: &mut Vec<usize>) -> bool {
+        let Some(last) = rules.pop() else {
+            return message.is_empty();
+        };
+
+        let res = match &self.rules[&last] {
+            Rule::Char(c) => {
+                starts_with(message, *c).map_or_else(|| false, |m| self.solve_dfs(m, rules))
+            }
+            Rule::Subrule(subrule) => {
+                for sb in subrule {
+                    let len = rules.len();
+                    rules.extend(sb.iter().rev());
+                    if self.solve_dfs(message, rules) {
+                        return true;
+                    }
+                    rules.truncate(len);
+                    assert_eq!(rules.len(), len);
+                }
+
+                false
+            }
+        };
+
+        if !res {
+            rules.push(last);
+        }
+        res
+    }
+
+    fn solve_pathfinding(&self, message: &str) -> bool {
+        pathfinding::prelude::dfs(
+            (message, vec![0]),
+            |(message, rules)| {
+                let Some(last) = rules.last().copied() else {
+                    return vec![];
+                };
+
+                match &self.rules[&last] {
+                    Rule::Char(c) => starts_with(message, *c)
+                        .map_or_else(Vec::new, |m| vec![(m, rules[..rules.len() - 1].to_vec())]),
+                    Rule::Subrule(subrule) => subrule
+                        .iter()
+                        .map(|individual_rule| {
+                            let r = rules[..rules.len() - 1]
+                                .iter()
+                                .chain(individual_rule.iter().rev())
+                                .copied()
+                                .collect();
+
+                            (*message, r)
+                        })
+                        .collect(),
+                }
+            },
+            |(mess, rules)| mess.is_empty() && rules.is_empty(),
+        )
+        .is_some()
     }
 
     fn solve<'a>(&'a self, message: &'a str, rule: usize) -> Vec<&'a str> {
@@ -38,7 +99,13 @@ impl Input {
             Rule::Char(c) => starts_with(message, *c).map_or_else(Vec::new, |m| vec![m]),
             Rule::Subrule(v) => v
                 .iter()
-                .flat_map(|rule| self.solve_other(message, rule))
+                .flat_map(|rule| {
+                    rule.iter().fold(vec![message], |acc, r| {
+                        acc.iter()
+                            .flat_map(|message| self.solve(message, *r))
+                            .collect()
+                    })
+                })
                 .collect(),
         }
     }
@@ -70,13 +137,7 @@ impl Input {
 
         match &self.rules.get(&rule_no) {
             None => vec![],
-            Some(Rule::Char(c)) => {
-                if let Some(rest) = starts_with(message, *c) {
-                    vec![rest]
-                } else {
-                    vec![]
-                }
-            }
+            Some(Rule::Char(c)) => starts_with(message, *c).map_or_else(Vec::new, |m| vec![m]),
             Some(Rule::Subrule(v)) => v
                 .iter()
                 .flat_map(|irl| self.check_sub(message, irl))
@@ -141,38 +202,44 @@ pub fn part1_orig(inputs: &Input) -> usize {
         .count()
 }
 
+fn mk_array<T: Clone, const N: usize>(slice: &[T]) -> ArrayVec<T, N> {
+    ArrayVec::try_from(slice).unwrap()
+}
+
+fn solve_part2(inputs: &Input, f: impl Fn(&Input, &str) -> bool) -> usize {
+    let mut inputs = inputs.clone();
+    inputs.replace_rule(8, &[42], &[42, 8]);
+    inputs.replace_rule(11, &[42, 31], &[42, 11, 31]);
+
+    {
+        inputs
+            .messages
+            .iter()
+            .filter(|message| f(&inputs, message))
+            .count()
+    }
+}
+
+#[aoc(day19, part2, dfs)]
+pub fn part2_dfs(inputs: &Input) -> usize {
+    solve_part2(inputs, |i, m| Input::solve_dfs(i, m, &mut vec![0]))
+}
+
 #[aoc(day19, part2)]
 pub fn part2(inputs: &Input) -> usize {
-    let mut inputs = inputs.clone();
-    inputs
-        .rules
-        .insert(8, Rule::Subrule(vec![vec![42], vec![42, 8]]));
-    inputs
-        .rules
-        .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
-
-    inputs
-        .messages
-        .iter()
-        .filter(|message| inputs.solve(message, 0).iter().any(|v| v.is_empty()))
-        .count()
+    solve_part2(inputs, |i, m| {
+        Input::solve(i, m, 0).into_iter().any(|v| v.is_empty())
+    })
 }
 
 #[aoc(day19, part2, orig)]
 pub fn part2_orig(inputs: &Input) -> usize {
-    let mut inputs = inputs.clone();
-    inputs
-        .rules
-        .insert(8, Rule::Subrule(vec![vec![42], vec![42, 8]]));
-    inputs
-        .rules
-        .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
+    solve_part2(inputs, |i, m| Input::check(i, m, 0))
+}
 
-    inputs
-        .messages
-        .iter()
-        .filter(|message| inputs.check(message, 0))
-        .count()
+#[aoc(day19, part2, pathfinding)]
+pub fn part2_pathfinding(inputs: &Input) -> usize {
+    solve_part2(inputs, Input::solve_pathfinding)
 }
 
 #[cfg(test)]
@@ -257,12 +324,8 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
     #[test]
     pub fn test2() {
         let mut inputs = generator(SAMPLE2);
-        inputs
-            .rules
-            .insert(8, Rule::Subrule(vec![vec![42], vec![42, 8]]));
-        inputs
-            .rules
-            .insert(11, Rule::Subrule(vec![vec![42, 31], vec![42, 11, 31]]));
+        inputs.replace_rule(8, &[42], &[42, 8]);
+        inputs.replace_rule(11, &[42, 31], &[42, 11, 31]);
 
         // println!();
 
