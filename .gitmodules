@@ -1,3 +1,6 @@
 [submodule "input"]
 	path = input
 	url = https://github.com/pedantic79/advent-of-code-input.git
+[submodule "src/common"]
+	path = src/common
+	url = https://github.com/pedantic79/advent-of-code-common.git
