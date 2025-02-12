@@ -1,5 +1,6 @@
 use nom::{
     branch::alt, bytes::complete::tag, combinator::all_consuming, multi::fold_many1, IResult,
+    Parser,
 };
 
 use std::collections::{HashMap, HashSet};
@@ -70,7 +71,8 @@ impl HexCoord {
                 "w" => current.w(),
                 _ => unreachable!(),
             },
-        ))(input)
+        ))
+        .parse(input)
     }
 }
 

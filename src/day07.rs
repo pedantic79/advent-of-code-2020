@@ -29,11 +29,11 @@ mod parser {
         character::complete::{alpha1, char, digit1},
         combinator::{all_consuming, map, map_res},
         multi::separated_list1,
-        IResult,
+        IResult, Parser,
     };
 
     fn numeric(s: &str) -> IResult<&str, usize> {
-        map_res(digit1, |x: &str| x.parse::<usize>())(s)
+        map_res(digit1, |x: &str| x.parse::<usize>()).parse(s)
     }
 
     fn adjective_color(s: &str) -> IResult<&str, (&str, &str)> {
@@ -47,7 +47,7 @@ mod parser {
     }
 
     fn bag(s: &str) -> IResult<&str, &str> {
-        alt((tag("bags"), tag("bag")))(s)
+        alt((tag("bags"), tag("bag"))).parse(s)
     }
 
     fn color_bag(s: &str) -> IResult<&str, (&str, &str)> {
@@ -76,7 +76,8 @@ mod parser {
         alt((
             map(tag("no other bags"), |_| Vec::new()),
             separated_list1(tag(", "), count_color_bag),
-        ))(s)
+        ))
+        .parse(s)
     }
 
     #[allow(clippy::type_complexity)]
@@ -90,7 +91,8 @@ mod parser {
 
                 Ok((s, (adj, color, list)))
             },
-        )(line)
+        )
+        .parse(line)
 
         // map(
         //     all_consuming(terminated(

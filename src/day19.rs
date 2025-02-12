@@ -7,7 +7,7 @@ use nom::{
     character::complete::{anychar, char},
     combinator::map,
     sequence::delimited,
-    IResult,
+    IResult, Parser,
 };
 
 use crate::common::nom::{fold_separated_list0, nom_usize};
@@ -74,13 +74,13 @@ impl Input {
 fn parse_rule_line(s: &str) -> IResult<&str, (usize, Rule)> {
     let (s, n) = nom_usize(s)?;
     let (s, _) = tag(": ")(s)?;
-    let (s, rule) = alt((parse_char, parse_multi_rule_block))(s)?;
+    let (s, rule) = alt((parse_char, parse_multi_rule_block)).parse(s)?;
 
     Ok((s, (n, rule)))
 }
 
 fn parse_char(s: &str) -> IResult<&str, Rule> {
-    map(delimited(char('"'), anychar, char('"')), Rule::Char)(s)
+    map(delimited(char('"'), anychar, char('"')), Rule::Char).parse(s)
 }
 
 fn parse_multi_rule_block(s: &str) -> IResult<&str, Rule> {
@@ -95,7 +95,8 @@ fn parse_multi_rule_block(s: &str) -> IResult<&str, Rule> {
             },
         ),
         Rule::Subrule,
-    )(s)
+    )
+    .parse(s)
 }
 
 fn parse_rule_block(s: &str) -> IResult<&str, ArrayVec<usize, 3>> {
@@ -107,7 +108,8 @@ fn parse_rule_block(s: &str) -> IResult<&str, ArrayVec<usize, 3>> {
             acc.push(n);
             acc
         },
-    )(s)
+    )
+    .parse(s)
 }
 
 fn parse_rules(input: &str) -> HashMap<usize, Rule> {
