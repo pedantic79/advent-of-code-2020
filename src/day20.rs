@@ -21,8 +21,9 @@ const SEA_MONSTER_SIZE: usize = count_sea_monster();
 const WIDTH: usize = 10;
 const WIDTH_TRIM: usize = WIDTH - 2;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 enum Dir {
+    #[default]
     Top,
     Right,
     Bottom,
@@ -38,12 +39,6 @@ impl From<usize> for Dir {
             3 => Self::Left,
             _ => panic!("modulo 4 should be between 0 and 3 exclusively"),
         }
-    }
-}
-
-impl Default for Dir {
-    fn default() -> Self {
-        Self::Top
     }
 }
 
@@ -370,7 +365,7 @@ impl<'a> TileCache<'a> {
                     .edges()
                     .0
                     .iter()
-                    .map(|edge| (self.get_edge_count_by_edge_id(*edge)))
+                    .map(|edge| self.get_edge_count_by_edge_id(*edge))
                     .eq([1, 2, 2, 1].iter().copied())
                 {
                     return mod_tile;
