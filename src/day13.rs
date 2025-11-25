@@ -36,10 +36,10 @@ pub fn generator(input: &str) -> BusSchedule {
 pub fn part1(schedule: &BusSchedule) -> usize {
     for i in schedule.start.. {
         for id in schedule.ids.iter() {
-            if let BusLine::Id(bus_id) = id {
-                if i % bus_id == 0 {
-                    return (i - schedule.start) * *bus_id;
-                }
+            if let BusLine::Id(bus_id) = id
+                && i % bus_id == 0
+            {
+                return (i - schedule.start) * *bus_id;
             }
         }
     }
@@ -128,7 +128,7 @@ pub fn part2_brute(_schedule: &BusSchedule) -> usize {
 
     #[inline]
     fn check_mod(m: usize, n: usize) -> bool {
-        n % m == 0
+        n.is_multiple_of(m)
     }
 
     // 644_101_264_100 * 457 + 407 is the right answer

@@ -66,13 +66,12 @@ fn railroad_shunting<T: TokenPrecedence>(tokens: &[Token]) -> Vec<Token> {
             Token::Num(n) => output.push(Token::Num(*n)),
             Token::Star | Token::Plus => {
                 loop {
-                    if let Some(last) = op_stack.last() {
-                        if (&Token::Star == last || &Token::Plus == last)
-                            && T::precedence(last) >= T::precedence(token)
-                        {
-                            output.push(op_stack.pop().unwrap());
-                            continue;
-                        }
+                    if let Some(last) = op_stack.last()
+                        && (&Token::Star == last || &Token::Plus == last)
+                        && T::precedence(last) >= T::precedence(token)
+                    {
+                        output.push(op_stack.pop().unwrap());
+                        continue;
                     }
 
                     break;
