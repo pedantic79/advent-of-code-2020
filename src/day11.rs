@@ -111,7 +111,7 @@ impl Floor {
         .iter()
         .map(|&(delta_r, delta_c)| {
             self.queen_iterator(row, col, delta_r, delta_c)
-                .find_map(|x| Some(x.occupied()).filter(|_| x != &SeatState::Blank))
+                .find_map(|x| (x != &SeatState::Blank).then_some(x.occupied()))
                 .unwrap_or(0)
         })
         .sum()
