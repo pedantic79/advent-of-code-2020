@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use crate::common::utils;
 
 #[derive(Debug, PartialEq)]
@@ -195,15 +197,14 @@ mod tests {
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day13.txt");
         const ANSWERS: (usize, usize) = (1915, 294_354_277_694_107);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(13));
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

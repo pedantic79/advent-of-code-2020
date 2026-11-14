@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use std::collections::BTreeMap;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -203,14 +205,14 @@ pid:3556412378 byr:2007";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day4.txt");
         const ANSWERS: (usize, usize) = (192, 101);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
-            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(4)).unwrap();
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

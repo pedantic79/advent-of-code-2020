@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use std::{
     cmp::Ordering,
     collections::{hash_map::DefaultHasher, HashSet, VecDeque},
@@ -166,15 +168,14 @@ Player 2:
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day22.txt");
         const ANSWERS: (usize, usize) = (33098, 35055);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(22));
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

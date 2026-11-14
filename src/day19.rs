@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use std::collections::HashMap;
 
 use arrayvec::ArrayVec;
@@ -258,15 +260,14 @@ aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba"#;
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day19.txt");
         const ANSWERS: (usize, usize) = (233, 396);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(19));
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

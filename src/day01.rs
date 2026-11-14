@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use std::{
     cmp::Ordering,
     collections::{BTreeSet, HashSet},
@@ -10,7 +12,7 @@ pub fn generator(input: &str) -> Vec<i32> {
     input.lines().map(|l| l.parse().unwrap()).collect()
 }
 
-#[aoc(day1, part1, BTreeSet)]
+#[aoc(day1, part1, BTreeSet, default)]
 pub fn part1(inputs: &[i32]) -> i32 {
     let mut seen = BTreeSet::new();
 
@@ -108,14 +110,14 @@ mod tests {
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day1.txt");
         const ANSWERS: (i32, i32) = (1_018_944, 8_446_464);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(1));
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

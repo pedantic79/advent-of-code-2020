@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Group {
     people: Vec<String>,
@@ -130,14 +132,14 @@ b";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day6.txt");
         const ANSWERS: (usize, usize) = (6443, 3232);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(6));
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }
