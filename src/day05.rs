@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 fn bool2num(b: bool) -> usize {
     b.into()
 }
@@ -18,7 +20,7 @@ pub fn part1(inputs: &[usize]) -> usize {
     inputs.iter().copied().max().unwrap()
 }
 
-#[aoc(day5 part2, vec)]
+#[aoc(day5, part2, vec, default)]
 pub fn part2_vec(inputs: &[usize]) -> usize {
     let mut set = inputs.to_vec();
     set.sort_unstable();
@@ -33,7 +35,7 @@ pub fn part2_vec(inputs: &[usize]) -> usize {
     unreachable!()
 }
 
-#[aoc(day5 part2, array)]
+#[aoc(day5, part2, array)]
 pub fn part2(inputs: &[usize]) -> usize {
     let mut seats = [false; 1024];
 
@@ -75,14 +77,14 @@ BBFFBBFRLL";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day5.txt");
         const ANSWERS: (usize, usize) = (978, 727);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(5));
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

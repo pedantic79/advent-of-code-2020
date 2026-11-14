@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use nom::{
     branch::alt, bytes::complete::tag, combinator::all_consuming, multi::fold_many1, IResult,
     Parser,
@@ -190,15 +192,14 @@ wseweeenwnesenwwwswnew";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day24.txt");
         const ANSWERS: (usize, usize) = (386, 4214);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(24));
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

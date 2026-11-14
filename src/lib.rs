@@ -1,5 +1,4 @@
-#[macro_use]
-extern crate aoc_runner_derive;
+use aoc_harness::aoc_lib;
 
 pub mod common;
 
@@ -29,4 +28,5 @@ pub mod day23;
 pub mod day24;
 pub mod day25;
 
+// Insert before
 aoc_lib! { year = 2020 }

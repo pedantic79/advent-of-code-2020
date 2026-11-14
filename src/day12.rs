@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum Op {
     North(i32),
@@ -194,15 +196,14 @@ F11";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day12.txt");
         const ANSWERS: (i32, i32) = (2458, 145_117);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(12));
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

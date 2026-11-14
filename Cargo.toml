@@ -3,21 +3,24 @@ name = "advent-of-code-2020"
 version = "0.1.0"
 authors = ["Dan Nguyen <pedantic@gmail.com>"]
 edition = "2024"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+rust-version = "1.94"
 
 [dependencies]
-aoc-runner = "0.3.0"
-aoc-runner-derive = "0.3.0"
+aoc-harness = "0.4.1"
 
-arrayvec = "0.7.6"
-bit-set = "0.10"
-nom = "8.0.0"
-num = "0.4.3"
-stable-pattern = "0.1.0"
-rayon = "1.10.0"
-bytecount = "0.6.8"
-nohash-hasher = "0.2.0"
+arrayvec = "0.7"
+bit-set = "0.11"
+itertools = "0.15"
+nom = "8.0"
+num = "0.4"
+stable-pattern = "0.1"
+rayon = "1"
+bytecount = "0.6"
+nohash-hasher = "0.2"
+
+[profile.release]
+lto = "thin"
+panic = "abort"
 
 [features]
 common_test = []

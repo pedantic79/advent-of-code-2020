@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -270,14 +272,14 @@ dark violet bags contain no other bags.";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day7.txt");
         const ANSWERS: (usize, usize) = (248, 57281);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
-            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(7)).unwrap();
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

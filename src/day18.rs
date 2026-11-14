@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
     Num(usize),
@@ -330,15 +332,14 @@ mod tests {
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day18.txt");
         const ANSWERS: (usize, usize) = (45_283_905_029_161, 216_975_281_211_165);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let output = generator(&aoc_harness::input!(18));
 
-            assert_eq!(part1_alt(&generator(input)), ANSWERS.0);
-            assert_eq!(part2_alt(&generator(input)), ANSWERS.1);
+            assert_eq!(part1_alt(&output), ANSWERS.0);
+            assert_eq!(part2_alt(&output), ANSWERS.1);
         }
     }
 }

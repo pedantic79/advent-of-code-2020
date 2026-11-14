@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[derive(PartialEq, Copy, Clone)]
 enum SeatState {
     Empty,
@@ -258,14 +260,14 @@ L.LLLLL.LL";
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day11.txt");
         const ANSWERS: (usize, usize) = (2222, 2032);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(11));
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

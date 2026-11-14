@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[derive(PartialEq, Eq, Debug)]
 pub struct Policy {
     letter: char,
@@ -103,14 +105,14 @@ mod tests {
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day2.txt");
         const ANSWERS: (usize, usize) = (458, 342);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input).unwrap()), ANSWERS.0);
-            assert_eq!(part2(&generator(input).unwrap()), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(2)).unwrap();
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

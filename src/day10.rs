@@ -1,3 +1,5 @@
+use aoc_harness::{aoc, aoc_generator};
+
 #[aoc_generator(day10)]
 pub fn generator(input: &str) -> Vec<usize> {
     let mut adaptors: Vec<usize> = input.lines().map(|l| l.parse().unwrap()).collect();
@@ -171,14 +173,14 @@ mod tests {
     mod regression {
         use super::*;
 
-        const INPUT: &str = include_str!("../input/2020/day10.txt");
         const ANSWERS: (usize, usize) = (2310, 64_793_042_714_624);
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            let output = generator(&aoc_harness::input!(10));
+
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }
