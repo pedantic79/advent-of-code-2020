@@ -1,5 +1,11 @@
 # Advent of Code 2020 - Rust
 
+> [!IMPORTANT]
+> This repository is archived. The 2020 solutions now live in
+> [pedantic79/advent-of-code](https://github.com/pedantic79/advent-of-code) under
+> [`src/y2020`](https://github.com/pedantic79/advent-of-code/tree/main/src/y2020).
+> See the [2020 puzzle list](https://github.com/pedantic79/advent-of-code#y2020) there.
+
 Requires Rust 1.94 or newer. Run `cargo test --locked --all-features` to test the
 solutions and shared utilities.
 
